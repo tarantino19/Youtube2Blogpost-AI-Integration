@@ -18,7 +18,7 @@ Convert YouTube videos into well-structured, SEO-optimized blog posts using AI.
 
    ```bash
    git clone <your-repo-url>
-   cd yttotext
+   cd yttotext-mernAItemplate
    ```
 
 2. **Run the setup script:**
@@ -138,107 +138,49 @@ npm run dev
 - YouTube Data API v3
 - OpenAI/Claude API for content generation
 
-## 📋 Prerequisites
-
-- Node.js (v16 or higher)
-- MongoDB (local or Atlas)
-- YouTube Data API key
-- OpenAI API key or Claude API key
-
-## 🔧 Installation
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/yttotext.git
-cd yttotext
-```
-
-2. Install backend dependencies:
-
-```bash
-cd server
-npm install
-```
-
-3. Install frontend dependencies:
-
-```bash
-cd ../client
-npm install
-```
-
-4. Set up environment variables:
-
-Create `.env` file in the server directory:
-
-```env
-# Server
-NODE_ENV=development
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/yttotext
-JWT_SECRET=your_jwt_secret_here
-JWT_EXPIRE=7d
-
-# YouTube API
-YOUTUBE_API_KEY=your_youtube_api_key
-
-# AI Service (choose one)
-OPENAI_API_KEY=your_openai_api_key
-# or
-ANTHROPIC_API_KEY=your_claude_api_key
-
-# Client URL
-CLIENT_URL=http://localhost:3000
-```
-
-Create `.env` file in the client directory:
-
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-## 🚀 Running the Application
-
-1. Start the backend server:
-
-```bash
-cd server
-npm run dev
-```
-
-2. In a new terminal, start the frontend:
-
-```bash
-cd client
-npm run dev
-```
-
-3. Open your browser and navigate to `http://localhost:3000`
-
 ## 📁 Project Structure
 
 ```
-yttotext/
-├── client/                 # React frontend
+yttotext-mernAItemplate/
+├── .gitignore              # Git ignore patterns
+├── setup.sh               # Automated setup script
+├── README.md              # This file
+├── client/                # React frontend
 │   ├── src/
 │   │   ├── components/    # Reusable UI components
-│   │   ├── contexts/      # React contexts
+│   │   │   └── layouts/   # Layout components
+│   │   ├── contexts/      # React contexts (Auth)
+│   │   ├── hooks/         # Custom React hooks
 │   │   ├── pages/         # Page components
 │   │   ├── services/      # API service functions
 │   │   ├── types/         # TypeScript definitions
-│   │   └── utils/         # Utility functions
-│   └── package.json
-├── server/                 # Express backend
+│   │   ├── utils/         # Utility functions
+│   │   ├── styles/        # Additional styles
+│   │   ├── router.tsx     # React Router configuration
+│   │   ├── main.tsx       # Application entry point
+│   │   └── index.css      # Global styles
+│   ├── env.example        # Environment template
+│   ├── package.json       # Frontend dependencies
+│   ├── tailwind.config.js # Tailwind configuration
+│   ├── vite.config.ts     # Vite configuration
+│   └── README.md          # Frontend documentation
+├── server/                # Express backend
 │   ├── src/
 │   │   ├── controllers/   # Route controllers
 │   │   ├── middleware/    # Express middleware
 │   │   ├── models/        # Mongoose models
 │   │   ├── routes/        # API routes
-│   │   ├── services/      # Business logic
-│   │   └── utils/         # Utility functions
-│   └── package.json
-└── README.md
+│   │   ├── services/      # Business logic services
+│   │   ├── utils/         # Utility functions
+│   │   └── app.js         # Express app setup
+│   ├── env.example        # Environment template
+│   ├── package.json       # Backend dependencies
+│   └── README.md          # Backend documentation
+└── docs/                  # Documentation files (gitignored)
+    ├── AUTHENTICATION_GUIDE.md
+    ├── PROJECT_PLAN.md
+    ├── SETUP_COMPLETE.md
+    └── TECHNICAL_IMPLEMENTATION.md
 ```
 
 ## 🔐 API Endpoints
@@ -269,9 +211,72 @@ yttotext/
 3. **Wait for Processing**: The AI will extract the transcript and generate a blog post
 4. **Edit & Export**: Review the generated content, make edits, and export in your preferred format
 
+## 🔒 Security Features
+
+- JWT-based authentication with secure token handling
+- Password hashing using bcrypt
+- Input validation and sanitization
+- CORS protection
+- Rate limiting on API endpoints
+- Environment variable protection with `.gitignore`
+
+## 📊 Development
+
+### Environment Variables
+
+The project uses environment variables for configuration:
+
+**Server (.env):**
+
+```env
+NODE_ENV=development
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/yttotext
+JWT_SECRET=your_secure_jwt_secret
+JWT_EXPIRE=7d
+YOUTUBE_API_KEY=your_youtube_api_key
+OPENAI_API_KEY=your_openai_api_key
+CLIENT_URL=http://localhost:3000
+```
+
+**Client (.env):**
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+### Git Configuration
+
+The project includes a comprehensive `.gitignore` file that excludes:
+
+- Node modules and dependencies
+- Environment files with sensitive data
+- Build outputs and cache files
+- IDE/editor configuration files
+- OS-specific files (`.DS_Store`, `Thumbs.db`)
+- All documentation `.md` files except `README.md` files
+
+## 🚀 Deployment
+
+### Production Checklist
+
+1. Set `NODE_ENV=production` in server environment
+2. Use production MongoDB database
+3. Generate secure JWT secrets
+4. Configure HTTPS with SSL certificates
+5. Set up reverse proxy (Nginx recommended)
+6. Use process manager (PM2 recommended)
+7. Configure monitoring and logging
+
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature-name`
+3. Make your changes
+4. Run tests: `npm test`
+5. Commit changes: `git commit -m "Add feature"`
+6. Push to branch: `git push origin feature-name`
+7. Submit a Pull Request
 
 ## 📝 License
 
