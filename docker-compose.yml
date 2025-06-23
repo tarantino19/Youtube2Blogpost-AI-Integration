@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+ mongodb:
+  image: mongo:7
+  container_name: yttotext-mongodb
+  restart: unless-stopped
+  ports:
+   - '27017:27017'
+  environment:
+   MONGO_INITDB_ROOT_USERNAME: admin
+   MONGO_INITDB_ROOT_PASSWORD: admin123
+   MONGO_INITDB_DATABASE: yttotext
+  volumes:
+   - mongodb_data:/data/db
+   - mongodb_config:/data/configdb
+  networks:
+   - yttotext-network
+
+ server:
+  build:
+   context: .
+   dockerfile: Dockerfile
+  container_name: yttotext-server
+  restart: unless-stopped
+  ports:
+   - '5000:5000'
+  environment:
+   NODE_ENV: production
+   MONGODB_URI: mongodb://admin:admin123@mongodb:27017/yttotext?authSource=admin
+   JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+   CLIENT_URL: ${CLIENT_URL:-http://localhost:3000}
+   YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
+   OPENAI_API_KEY: ${OPENAI_API_KEY}
+   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+   GEMINI_API_KEY: ${GEMINI_API_KEY}
+  depends_on:
+   - mongodb
+  networks:
+   - yttotext-network
+  volumes:
+   - ./server:/app/server:ro
+   - /app/server/node_modules
+
+ client:
+  build:
+   context: ./client
+   dockerfile: Dockerfile.dev
+  container_name: yttotext-client
+  restart: unless-stopped
+  ports:
+   - '3000:3000'
+  environment:
+   VITE_API_URL: http://localhost:5000/api
+  volumes:
+   - ./client:/app:ro
+   - /app/node_modules
+  networks:
+   - yttotext-network
+
+volumes:
+ mongodb_data:
+ mongodb_config:
+
+networks:
+ yttotext-network:
+  driver: bridge

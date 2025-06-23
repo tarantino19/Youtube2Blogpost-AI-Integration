@@ -1,5 +1,7 @@
 const BlogPost = require('../models/BlogPost');
 const User = require('../models/User');
+const { exec } = require('child_process');
+const path = require('path');
 // Use API-free service if no YouTube API key is configured
 const youtubeService =
 	process.env.YOUTUBE_API_KEY && process.env.YOUTUBE_API_KEY !== 'your-youtube-api-key-here'
@@ -119,7 +121,19 @@ async function processVideoAsync(blogPostId, videoId, user, metadata) {
 				language: metadata.language,
 			}
 		);
-		console.log(`✅ Blog content generated: ${generatedContent.content.length} characters`);
+		console.log(
+			`✅ Blog content generated: ${
+				typeof generatedContent.content === 'string' ? generatedContent.content.length : 'Not a string'
+			} characters`
+		);
+		console.log(`🔍 Generated content type:`, typeof generatedContent);
+		console.log(`🔍 Generated content structure:`, {
+			hasTitle: !!generatedContent.title,
+			hasContent: !!generatedContent.content,
+			contentType: typeof generatedContent.content,
+			contentPreview:
+				typeof generatedContent.content === 'string' ? generatedContent.content.substring(0, 100) + '...' : 'Not a string',
+		});
 
 		// Extract keywords for SEO
 		console.log(`🔍 Extracting keywords...`);
@@ -128,12 +142,62 @@ async function processVideoAsync(blogPostId, videoId, user, metadata) {
 
 		// Update blog post with all required fields at once
 		console.log(`💾 Updating blog post with generated content...`);
+
+		// Ensure we're not accidentally stringifying the content
+		let contentToSave;
+
+		// Handle different formats of generatedContent
+		if (typeof generatedContent === 'string') {
+			try {
+				// Check if it's wrapped in markdown code blocks
+				let jsonString = generatedContent;
+				if (generatedContent.trim().startsWith('```json') && generatedContent.trim().endsWith('```')) {
+					// Remove the markdown code block wrapper
+					jsonString = generatedContent
+						.replace(/^```json\s*/, '')
+						.replace(/\s*```$/, '')
+						.trim();
+				} else if (generatedContent.trim().startsWith('```') && generatedContent.trim().endsWith('```')) {
+					// Remove any code block wrapper
+					jsonString = generatedContent
+						.replace(/^```[a-z]*\s*/, '')
+						.replace(/\s*```$/, '')
+						.trim();
+				}
+
+				const parsed = JSON.parse(jsonString);
+				contentToSave = {
+					title: parsed.title,
+					content: parsed.content, // This should be markdown string, not JSON
+					summary: parsed.summary,
+					sections: parsed.sections || [],
+					tags: parsed.tags || [],
+					metaDescription: parsed.metaDescription || '',
+					keyTakeaways: parsed.keyTakeaways || [],
+					keywords: keywords || [],
+				};
+				console.log('✅ Successfully parsed wrapped JSON content');
+			} catch (error) {
+				console.error('Failed to parse stringified content:', error);
+				console.error('Content preview:', generatedContent.substring(0, 200));
+				throw new Error('Invalid generated content format');
+			}
+		} else {
+			contentToSave = {
+				title: generatedContent.title,
+				content: generatedContent.content, // This should be markdown string, not JSON
+				summary: generatedContent.summary,
+				sections: generatedContent.sections || [],
+				tags: generatedContent.tags || [],
+				metaDescription: generatedContent.metaDescription || '',
+				keyTakeaways: generatedContent.keyTakeaways || [],
+				keywords: keywords || [],
+			};
+		}
+
 		await BlogPost.findByIdAndUpdate(blogPostId, {
 			transcript: transcriptData.transcript,
-			generatedContent: {
-				...generatedContent,
-				keywords,
-			},
+			generatedContent: contentToSave,
 			status: 'completed',
 			wordCount: generatedContent.content.split(/\s+/).length,
 			readingTime: Math.ceil(generatedContent.content.split(/\s+/).length / 200),
@@ -143,6 +207,33 @@ async function processVideoAsync(blogPostId, videoId, user, metadata) {
 		console.log(`💳 Deducting credit from user...`);
 		user.subscription.creditsRemaining -= 1;
 		await user.save();
+
+		// Automatically fix content structure after successful generation
+		console.log(`🔧 Auto-fixing blog content structure for post ${blogPostId}...`);
+		try {
+			const scriptPath = path.join(__dirname, '../../scripts/fix-blog-content.js');
+			const command = `node "${scriptPath}" --postId=${blogPostId}`;
+
+			await new Promise((resolve, reject) => {
+				exec(command, { cwd: path.join(__dirname, '../..') }, (error, stdout, stderr) => {
+					if (error) {
+						console.error(`❌ Fix script error:`, error);
+						reject(error);
+						return;
+					}
+					if (stderr) {
+						console.log(`⚠️ Fix script stderr:`, stderr);
+					}
+					console.log(`✅ Fix script output:`, stdout);
+					resolve(stdout);
+				});
+			});
+
+			console.log(`🎉 Content automatically fixed for post ${blogPostId}`);
+		} catch (fixError) {
+			console.error(`❌ Failed to auto-fix content for post ${blogPostId}:`, fixError.message);
+			// Don't fail the entire process if fix fails, just log it
+		}
 
 		console.log(`🎉 Successfully processed video ${videoId} - Post status: completed`);
 	} catch (error) {

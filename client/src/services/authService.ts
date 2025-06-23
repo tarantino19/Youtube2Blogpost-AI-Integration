@@ -13,8 +13,8 @@ export const authService = {
 	},
 
 	async getProfile(): Promise<User> {
-		const { data } = await api.get<User>('/auth/profile');
-		return data;
+		const { data } = await api.get<{ user: User }>('/auth/profile');
+		return data.user;
 	},
 
 	async refreshToken(): Promise<{ token: string }> {

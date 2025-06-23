@@ -18,7 +18,8 @@ const generateBlogPost = async (transcript, videoTitle, videoDescription, additi
 
 	const systemPrompt = `You are a professional content writer who creates engaging, SEO-optimized blog posts from video transcripts. 
 Your writing should be clear, informative, and maintain the original video's key messages while improving readability.
-Always structure content with proper headings, paragraphs, and formatting.`;
+Always structure content with proper headings, paragraphs, and formatting.
+Use markdown formatting for the content field - including proper headers (##, ###), bold text (**text**), bullet points, and links where appropriate.`;
 
 	const userPrompt = `Convert the following YouTube video transcript into a well-structured, engaging blog post.
 
@@ -46,11 +47,18 @@ Please create a blog post with:
 7. A meta description (150-160 characters) for SEO
 
 Important guidelines:
-- Make the content scannable with short paragraphs
+- Make the content scannable with short paragraphs (3-4 sentences max)
 - Use bullet points or numbered lists where appropriate
-- Include relevant quotes from the transcript
+- Include relevant quotes from the transcript using blockquotes (> quote)
 - Maintain a conversational yet professional tone
 - Ensure the content is valuable even without watching the video
+- Use proper markdown formatting:
+  - ## for main sections
+  - ### for subsections
+  - **bold** for emphasis
+  - - or * for bullet points
+  - 1. 2. 3. for numbered lists
+- Write in a flowing, natural style - NOT as JSON or technical output
 
 Format the response as JSON with the following structure:
 {

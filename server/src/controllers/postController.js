@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const BlogPost = require('../models/BlogPost');
 const aiService = require('../services/aiService');
+const puppeteer = require('puppeteer');
 const {
 	validateObjectId,
 	validatePaginationParams,
@@ -180,8 +181,8 @@ const exportPost = async (req, res) => {
 			return res.status(400).json({ error: 'Invalid post ID' });
 		}
 
-		if (!['markdown', 'html', 'json'].includes(format)) {
-			return res.status(400).json({ error: 'Invalid export format. Use markdown, html, or json' });
+		if (!['markdown', 'html', 'json', 'pdf'].includes(format)) {
+			return res.status(400).json({ error: 'Invalid export format. Use markdown, html, json, or pdf' });
 		}
 
 		const post = await BlogPost.findOne({ _id: id, userId });
@@ -196,12 +197,14 @@ const exportPost = async (req, res) => {
 			markdown: 'text/markdown',
 			html: 'text/html',
 			json: 'application/json',
+			pdf: 'application/pdf',
 		};
 
 		const fileExtensions = {
 			markdown: 'md',
 			html: 'html',
 			json: 'json',
+			pdf: 'pdf',
 		};
 
 		const filename = `${exportData.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.${fileExtensions[format]}`;
@@ -259,6 +262,226 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
 </html>`;
 
 			res.send(htmlContent);
+		} else if (format === 'pdf') {
+			// Generate PDF using Puppeteer
+			try {
+				const browser = await puppeteer.launch({
+					args: ['--no-sandbox', '--disable-setuid-sandbox'],
+					headless: true,
+				});
+				const page = await browser.newPage();
+
+				// Create HTML content for PDF
+				const pdfHtmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${exportData.title}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #111;
+            border-bottom: 3px solid #ef4444;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #111;
+        }
+        
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            color: #111;
+        }
+        
+        p {
+            margin-bottom: 16px;
+            text-align: justify;
+        }
+        
+        .meta {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .meta h3 {
+            margin-top: 0;
+            color: #ef4444;
+            font-size: 16px;
+        }
+        
+        .meta p {
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        
+        .meta a {
+            color: #ef4444;
+            text-decoration: none;
+        }
+        
+        .summary {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .summary h3 {
+            margin-top: 0;
+            color: #1976d2;
+            font-size: 16px;
+        }
+        
+        .content {
+            margin-bottom: 30px;
+        }
+        
+        .tags {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .tag {
+            display: inline-block;
+            background: #ef4444;
+            color: white;
+            padding: 4px 12px;
+            margin: 2px 4px 2px 0;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        ul, ol {
+            margin-bottom: 16px;
+            padding-left: 20px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        blockquote {
+            border-left: 4px solid #ef4444;
+            margin: 20px 0;
+            padding: 15px 20px;
+            background: #f9f9f9;
+            font-style: italic;
+        }
+        
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>${exportData.title}</h1>
+    
+    <div class="meta">
+        <h3>Video Information</h3>
+        <p><strong>Original Video:</strong> <a href="${exportData.videoUrl}">${exportData.videoTitle}</a></p>
+        <p><strong>Created:</strong> ${new Date(exportData.createdAt).toLocaleDateString()}</p>
+        <p><strong>Reading Time:</strong> ${exportData.readingTime} minutes</p>
+        <p><strong>Word Count:</strong> ${exportData.wordCount.toLocaleString()} words</p>
+    </div>
+    
+    ${
+					exportData.summary
+						? `
+    <div class="summary">
+        <h3>Summary</h3>
+        <p>${exportData.summary}</p>
+    </div>
+    `
+						: ''
+				}
+    
+    <div class="content">
+        ${exportData.content.replace(/\n/g, '<br>')}
+    </div>
+    
+    ${
+					exportData.tags.length > 0
+						? `
+    <div class="tags">
+        <strong>Tags:</strong><br>
+        ${exportData.tags.map((tag) => `<span class="tag">${tag}</span>`).join('')}
+    </div>
+    `
+						: ''
+				}
+    
+    <div class="footer">
+        <p>Generated from YouTube video on ${new Date().toLocaleDateString()}</p>
+    </div>
+</body>
+</html>`;
+
+				await page.setContent(pdfHtmlContent, { waitUntil: 'networkidle0' });
+
+				const pdfBuffer = await page.pdf({
+					format: 'A4',
+					margin: {
+						top: '20mm',
+						right: '20mm',
+						bottom: '20mm',
+						left: '20mm',
+					},
+					printBackground: true,
+				});
+
+				await browser.close();
+
+				res.setHeader('Content-Type', 'application/pdf');
+				res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+				res.send(pdfBuffer);
+			} catch (pdfError) {
+				console.error('PDF generation error:', pdfError);
+				res.status(500).json({ error: 'Failed to generate PDF' });
+			}
 		} else {
 			res.json(exportData);
 		}

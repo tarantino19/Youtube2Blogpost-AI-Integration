@@ -1,0 +1,66 @@
+services:
+ # MongoDB database
+ - type: pserv
+   name: yttotext-mongodb
+   runtime: docker
+   dockerfilePath: ./mongodb.Dockerfile
+   envVars:
+    - key: MONGO_INITDB_ROOT_USERNAME
+      value: admin
+    - key: MONGO_INITDB_ROOT_PASSWORD
+      generateValue: true
+    - key: MONGO_INITDB_DATABASE
+      value: yttotext
+   disk:
+    name: mongodb-data
+    mountPath: /data/db
+    sizeGB: 10
+
+ # Backend API
+ - type: web
+   name: yttotext-api
+   runtime: node
+   buildCommand: cd server && npm install
+   startCommand: cd server && node src/app.js
+   envVars:
+    - key: NODE_ENV
+      value: production
+    - key: PORT
+      value: 5000
+    - key: MONGODB_URI
+      fromService:
+       type: pserv
+       name: yttotext-mongodb
+       property: connectionString
+    - key: JWT_SECRET
+      generateValue: true
+    - key: CLIENT_URL
+      fromService:
+       type: web
+       name: yttotext-client
+       property: url
+    - key: YOUTUBE_API_KEY
+      sync: false
+    - key: OPENAI_API_KEY
+      sync: false
+    - key: ANTHROPIC_API_KEY
+      sync: false
+    - key: GEMINI_API_KEY
+      sync: false
+
+ # Frontend client
+ - type: web
+   name: yttotext-client
+   runtime: static
+   buildCommand: cd client && npm install && npm run build
+   staticPublishPath: ./client/dist
+   routes:
+    - type: rewrite
+      source: /*
+      destination: /index.html
+   envVars:
+    - key: VITE_API_URL
+      fromService:
+       type: web
+       name: yttotext-api
+       property: url

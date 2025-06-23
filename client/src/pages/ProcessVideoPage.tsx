@@ -2,17 +2,24 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { videoService } from '@/services/videoService';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Youtube, AlertCircle } from 'lucide-react';
+import { ProcessingLoader } from '@/components/ProcessingLoader';
 
 export function ProcessVideoPage() {
 	const [videoUrl, setVideoUrl] = useState('');
 	const [error, setError] = useState('');
+	const [processingPostId, setProcessingPostId] = useState<string | null>(null);
 	const navigate = useNavigate();
+	const { refreshUser } = useAuth();
 
 	const processMutation = useMutation({
 		mutationFn: videoService.processVideo,
 		onSuccess: (data) => {
-			navigate(`/posts/${data.postId}`);
+			// Instead of immediately navigating, show the loading component
+			setProcessingPostId(data.postId);
+			// Refresh user data to update credits
+			refreshUser();
 		},
 		onError: (err: any) => {
 			setError(err.response?.data?.error || 'Failed to process video');
@@ -32,6 +39,24 @@ export function ProcessVideoPage() {
 
 		processMutation.mutate({ videoUrl });
 	};
+
+	const handleProcessingComplete = () => {
+		if (processingPostId) {
+			navigate(`/posts/${processingPostId}`);
+		}
+	};
+
+	const handleProcessingError = (errorMsg: string) => {
+		setError(errorMsg);
+		setProcessingPostId(null);
+	};
+
+	// Show processing loader if we have a post ID
+	if (processingPostId) {
+		return (
+			<ProcessingLoader postId={processingPostId} onComplete={handleProcessingComplete} onError={handleProcessingError} />
+		);
+	}
 
 	return (
 		<div className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
@@ -80,7 +105,7 @@ export function ProcessVideoPage() {
 							{processMutation.isPending ? (
 								<>
 									<Loader2 className='h-5 w-5 mr-2 animate-spin' />
-									Processing Video...
+									Starting Processing...
 								</>
 							) : (
 								'Process Video'
@@ -88,28 +113,6 @@ export function ProcessVideoPage() {
 						</button>
 					</div>
 				</form>
-
-				{processMutation.isPending && (
-					<div className='mt-8 text-center'>
-						<div className='bg-blue-50 rounded-lg p-6'>
-							<p className='text-sm text-blue-800 mb-2'>
-								<strong>Processing your video...</strong>
-							</p>
-							<p className='text-sm text-blue-600'>This may take a few minutes depending on the video length.</p>
-							<div className='mt-4 space-y-2'>
-								<div className='flex items-center justify-center text-sm text-blue-600'>
-									<span className='animate-pulse'>• Extracting transcript...</span>
-								</div>
-								<div className='flex items-center justify-center text-sm text-blue-600'>
-									<span className='animate-pulse'>• Analyzing content...</span>
-								</div>
-								<div className='flex items-center justify-center text-sm text-blue-600'>
-									<span className='animate-pulse'>• Generating blog post...</span>
-								</div>
-							</div>
-						</div>
-					</div>
-				)}
 
 				<div className='mt-8 border-t pt-8'>
 					<h2 className='text-lg font-semibold text-gray-900 mb-4'>Tips for Best Results</h2>
