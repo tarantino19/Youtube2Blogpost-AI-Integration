@@ -8,6 +8,8 @@ const config = require("./config/config");
 
 const app = express();
 
+console.log("hello world TEAHGHAHH!!!@@!");
+
 // Middleware
 app.use(helmet());
 app.use(cors(config.cors));
@@ -15,8 +17,6 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan(config.isDevelopment ? "dev" : "combined"));
-
-console.log("I need to add this console log", "I love my mom");
 
 // Database connection
 mongoose
