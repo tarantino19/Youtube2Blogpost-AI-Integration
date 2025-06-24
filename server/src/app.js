@@ -8,8 +8,6 @@ const config = require("./config/config");
 
 const app = express();
 
-console.log("hello world TEAHGHAHH!!!@@!");
-
 // Middleware
 app.use(helmet());
 app.use(cors(config.cors));
