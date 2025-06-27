@@ -150,7 +150,9 @@ class TranscriptService {
 		try {
 			await execAsync('yt-dlp --version');
 		} catch (error) {
-			throw new Error('yt-dlp not installed. Install with: pip install yt-dlp');
+			throw new Error(
+				'yt-dlp not installed. Install with: pip install yt-dlp or run: bash scripts/install-optional-deps.sh'
+			);
 		}
 
 		// Try to get subtitles

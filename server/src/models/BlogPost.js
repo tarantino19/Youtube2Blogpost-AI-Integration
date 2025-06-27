@@ -103,6 +103,10 @@ const blogPostSchema = new mongoose.Schema({
 		type: String,
 		default: 'en',
 	},
+	aiModel: {
+		type: String,
+		default: 'gemini-1.5-flash',
+	},
 	isPublished: {
 		type: Boolean,
 		default: false,

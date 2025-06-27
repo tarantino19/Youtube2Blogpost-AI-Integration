@@ -2,22 +2,30 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const generateToken = (userId) => {
-	return jwt.sign({ id: userId }, process.env.JWT_SECRET || 'your_jwt_secret_key', {
+	const secret = process.env.JWT_SECRET;
+	if (!secret || secret === 'your_jwt_secret_key' || secret === 'dev-secret-change-this') {
+		throw new Error('JWT_SECRET must be set to a secure value');
+	}
+	return jwt.sign({ id: userId }, secret, {
 		expiresIn: process.env.JWT_EXPIRE || '7d',
 	});
 };
 
 const generateRefreshToken = (userId) => {
-	return jwt.sign(
-		{ id: userId, type: 'refresh' },
-		process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your_jwt_secret_key',
-		{ expiresIn: '30d' }
-	);
+	const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+	if (!secret || secret === 'your_jwt_secret_key' || secret === 'dev-secret-change-this') {
+		throw new Error('JWT_SECRET must be set to a secure value');
+	}
+	return jwt.sign({ id: userId, type: 'refresh' }, secret, { expiresIn: '30d' });
 };
 
 const verifyToken = (token) => {
 	try {
-		return jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key');
+		const secret = process.env.JWT_SECRET;
+		if (!secret || secret === 'your_jwt_secret_key' || secret === 'dev-secret-change-this') {
+			throw new Error('JWT_SECRET must be set to a secure value');
+		}
+		return jwt.verify(token, secret);
 	} catch (error) {
 		throw new Error('Invalid token');
 	}

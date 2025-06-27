@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const BlogPost = require('../models/BlogPost');
-const aiService = require('../services/aiService');
+const aiService = require('../services/unifiedAIService');
 const puppeteer = require('puppeteer');
 const {
 	validateObjectId,
@@ -510,8 +510,13 @@ const improvePost = async (req, res) => {
 			return res.status(404).json({ error: 'Post not found' });
 		}
 
-		// Improve content with AI
-		const improvedContent = await aiService.improveContent(post.generatedContent.content, sanitizeInput(instructions));
+		// Improve content with AI (use the model that was originally used for this post, or default)
+		const modelId = post.aiModel || 'gemini-1.5-flash';
+		const improvedContent = await aiService.improveContent(
+			post.generatedContent.content,
+			sanitizeInput(instructions),
+			modelId
+		);
 
 		// Update post
 		post.generatedContent.content = improvedContent;

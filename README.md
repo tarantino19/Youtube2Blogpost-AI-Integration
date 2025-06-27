@@ -1,4 +1,5 @@
 # YTtoText - YouTube to Blog Post Converter
+
 TEST
 Convert YouTube videos into well-structured, SEO-optimized blog posts using AI.
 
@@ -10,9 +11,17 @@ Convert YouTube videos into well-structured, SEO-optimized blog posts using AI.
 
 - Node.js 18+
 - MongoDB (local or cloud instance)
-- API Keys:
-  - YouTube Data API key
-  - OpenAI API key (or Anthropic Claude API key)
+- API Keys (at least one AI provider):
+  - YouTube Data API key (required)
+  - AI Provider keys (one or more):
+    - OpenAI API key
+    - Anthropic API key
+    - Google/Gemini API key
+    - xAI API key
+    - Groq API key
+    - Mistral API key
+    - Cohere API key
+    - AWS credentials (for Bedrock)
 
 ### Installation
 
@@ -115,12 +124,14 @@ npm run dev
 ## 🚀 Features
 
 - **YouTube Video Processing**: Extract transcripts from any YouTube video
-- **AI-Powered Content Generation**: Convert video transcripts into structured blog posts
+- **AI-Powered Content Generation**: Convert video transcripts into structured blog posts using **20+ AI models** from 8 providers
+- **Multi-Model Support**: Choose from OpenAI, Anthropic, Google, xAI, Groq, Mistral, Cohere, and AWS Bedrock models
 - **User Authentication**: Secure JWT-based authentication system
 - **Content Management**: Full CRUD operations for generated blog posts
 - **Export Options**: Export posts in Markdown, HTML, or PDF formats
 - **Responsive Design**: Beautiful, modern UI that works on all devices
 - **Real-time Processing**: Live updates on video processing status
+- **Powered by Vercel AI SDK**: Unified interface for all AI providers
 
 ## 🛠️ Tech Stack
 

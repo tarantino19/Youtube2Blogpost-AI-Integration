@@ -1,15 +1,36 @@
 import { api } from './api';
-import { ProcessVideoRequest, ProcessVideoResponse } from '@/types';
+import { ProcessVideoResponse } from '@/types';
+
+export interface ProcessVideoRequest {
+	videoUrl: string;
+	modelId?: string;
+}
+
+export interface AvailableModel {
+	id: string;
+	provider: string;
+	model: string;
+	name: string;
+	maxTokens: number;
+}
 
 export const videoService = {
-	async processVideo(data: ProcessVideoRequest): Promise<ProcessVideoResponse> {
-		const response = await api.post<ProcessVideoResponse>('/videos/process', data);
-		return response.data;
+	// Get available AI models
+	getAvailableModels: async (): Promise<{ models: AvailableModel[] }> => {
+		const { data } = await api.get('/videos/models');
+		return data;
 	},
 
-	async getVideoStatus(id: string) {
-		const { data } = await api.get(`/videos/${id}`);
+	// Process a new video
+	processVideo: async (params: ProcessVideoRequest): Promise<ProcessVideoResponse> => {
+		const { data } = await api.post('/videos/process', params);
 		return data;
+	},
+
+	// Get video processing status
+	getVideoStatus: async (postId: string) => {
+		const response = await api.get(`/videos/status/${postId}`);
+		return response.data;
 	},
 
 	async getVideos() {

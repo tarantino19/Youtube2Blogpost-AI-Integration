@@ -1,17 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { videoService } from '@/services/videoService';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { videoService, AvailableModel } from '@/services/videoService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Youtube, AlertCircle } from 'lucide-react';
 import { ProcessingLoader } from '@/components/ProcessingLoader';
 
 export function ProcessVideoPage() {
 	const [videoUrl, setVideoUrl] = useState('');
+	const [selectedModel, setSelectedModel] = useState('');
 	const [error, setError] = useState('');
 	const [processingPostId, setProcessingPostId] = useState<string | null>(null);
 	const navigate = useNavigate();
 	const { refreshUser } = useAuth();
+
+	// Fetch available models
+	const { data: modelsData, isLoading: isLoadingModels } = useQuery({
+		queryKey: ['available-models'],
+		queryFn: videoService.getAvailableModels,
+	});
+
+	// Set default model when models are loaded
+	useEffect(() => {
+		if (modelsData?.models?.length && !selectedModel) {
+			// Try to set a default model (prefer Gemini Flash as it has higher free tier limits)
+			const defaultModel =
+				modelsData.models.find((m) => m.id === 'gemini-1.5-flash') ||
+				modelsData.models.find((m) => m.id === 'gpt-3.5-turbo') ||
+				modelsData.models[0];
+			if (defaultModel) {
+				setSelectedModel(defaultModel.id);
+			}
+		}
+	}, [modelsData, selectedModel]);
+
+	// Group models by provider for better UX
+	const modelsByProvider = modelsData?.models?.reduce((acc, model) => {
+		if (!acc[model.provider]) {
+			acc[model.provider] = [];
+		}
+		acc[model.provider].push(model);
+		return acc;
+	}, {} as Record<string, AvailableModel[]>);
 
 	const processMutation = useMutation({
 		mutationFn: videoService.processVideo,
@@ -37,7 +67,7 @@ export function ProcessVideoPage() {
 			return;
 		}
 
-		processMutation.mutate({ videoUrl });
+		processMutation.mutate({ videoUrl, modelId: selectedModel });
 	};
 
 	const handleProcessingComplete = () => {
@@ -96,10 +126,46 @@ export function ProcessVideoPage() {
 						</p>
 					</div>
 
+					<div>
+						<label htmlFor='model-select' className='block text-sm font-medium text-gray-700 mb-2'>
+							Select AI Model
+						</label>
+						{isLoadingModels ? (
+							<div className='w-full px-4 py-3 border border-gray-300 rounded-md bg-gray-50'>
+								<Loader2 className='h-5 w-5 animate-spin mx-auto' />
+							</div>
+						) : modelsByProvider && Object.keys(modelsByProvider).length > 0 ? (
+							<select
+								id='model-select'
+								value={selectedModel}
+								onChange={(e) => setSelectedModel(e.target.value)}
+								className='w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500'
+								disabled={processMutation.isPending}
+							>
+								{Object.entries(modelsByProvider).map(([provider, models]) => (
+									<optgroup key={provider} label={provider.charAt(0).toUpperCase() + provider.slice(1)}>
+										{models.map((model) => (
+											<option key={model.id} value={model.id}>
+												{model.name} ({model.maxTokens.toLocaleString()} tokens)
+											</option>
+										))}
+									</optgroup>
+								))}
+							</select>
+						) : (
+							<div className='w-full px-4 py-3 border border-gray-300 rounded-md bg-yellow-50'>
+								<p className='text-sm text-yellow-800'>No AI models available. Please configure API keys.</p>
+							</div>
+						)}
+						<p className='mt-2 text-sm text-gray-500'>
+							Choose the AI model to generate your blog post. Different models have different capabilities and costs.
+						</p>
+					</div>
+
 					<div className='flex justify-center'>
 						<button
 							type='submit'
-							disabled={processMutation.isPending || !videoUrl}
+							disabled={processMutation.isPending || !videoUrl || !selectedModel || isLoadingModels}
 							className='inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed'
 						>
 							{processMutation.isPending ? (

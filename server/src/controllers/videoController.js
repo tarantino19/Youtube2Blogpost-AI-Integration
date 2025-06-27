@@ -7,16 +7,13 @@ const youtubeService =
 	process.env.YOUTUBE_API_KEY && process.env.YOUTUBE_API_KEY !== 'your-youtube-api-key-here'
 		? require('../services/youtubeService')
 		: require('../services/youtubeServiceNoAPI');
-// Choose AI service based on available API keys
-const aiService =
-	process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your-gemini-api-key-here'
-		? require('../services/geminiService')
-		: require('../services/aiService');
+// Use unified AI service
+const aiService = require('../services/unifiedAIService');
 const { validateYouTubeUrl, extractYouTubeVideoId, validateObjectId } = require('../utils/validators');
 
 const processVideo = async (req, res) => {
 	try {
-		const { videoUrl } = req.body;
+		const { videoUrl, modelId } = req.body;
 		const userId = req.user.id;
 
 		// Validate YouTube URL
@@ -67,13 +64,14 @@ const processVideo = async (req, res) => {
 			videoChannel: validation.metadata.channelTitle,
 			status: 'processing',
 			language: validation.metadata.language,
+			aiModel: modelId || process.env.DEFAULT_AI_MODEL || 'gemini-1.5-flash',
 		});
 
 		await blogPost.save();
 
 		// Process video asynchronously
-		console.log(`🚀 About to start async processing for post ${blogPost._id}`);
-		processVideoAsync(blogPost._id, videoId, user, validation.metadata).catch((error) => {
+		console.log(`🚀 About to start async processing for post ${blogPost._id} using model ${blogPost.aiModel}`);
+		processVideoAsync(blogPost._id, videoId, user, validation.metadata, modelId).catch((error) => {
 			console.error(`💥 Async processing failed for ${blogPost._id}:`, error);
 		});
 
@@ -81,6 +79,7 @@ const processVideo = async (req, res) => {
 			message: 'Video processing started',
 			postId: blogPost._id,
 			estimatedTime: '2-3 minutes',
+			modelUsed: blogPost.aiModel,
 		});
 	} catch (error) {
 		console.error('Process video error:', error);
@@ -88,8 +87,9 @@ const processVideo = async (req, res) => {
 	}
 };
 
-async function processVideoAsync(blogPostId, videoId, user, metadata) {
-	console.log(`🚀 Starting async processing for video ${videoId} (post: ${blogPostId})`);
+async function processVideoAsync(blogPostId, videoId, user, metadata, modelId) {
+	const selectedModel = modelId || process.env.DEFAULT_AI_MODEL || 'gemini-1.5-flash';
+	console.log(`🚀 Starting async processing for video ${videoId} (post: ${blogPostId}) with model ${selectedModel}`);
 
 	try {
 		const blogPost = await BlogPost.findById(blogPostId);
@@ -110,7 +110,7 @@ async function processVideoAsync(blogPostId, videoId, user, metadata) {
 		console.log(`✅ Comments received: ${comments.length} comments`);
 
 		// Generate blog post with AI
-		console.log(`🤖 Generating blog post content with AI...`);
+		console.log(`🤖 Generating blog post content with AI model: ${selectedModel}...`);
 		const generatedContent = await aiService.generateBlogPost(
 			transcriptData.transcript,
 			metadata.title,
@@ -119,7 +119,8 @@ async function processVideoAsync(blogPostId, videoId, user, metadata) {
 				comments,
 				tags: metadata.tags,
 				language: metadata.language,
-			}
+			},
+			selectedModel
 		);
 		console.log(
 			`✅ Blog content generated: ${
@@ -137,7 +138,7 @@ async function processVideoAsync(blogPostId, videoId, user, metadata) {
 
 		// Extract keywords for SEO
 		console.log(`🔍 Extracting keywords...`);
-		const keywords = await aiService.extractKeywords(generatedContent.content);
+		const keywords = await aiService.extractKeywords(generatedContent.content, selectedModel);
 		console.log(`✅ Keywords extracted: ${keywords.length} keywords`);
 
 		// Update blog post with all required fields at once
@@ -370,7 +371,7 @@ const retryVideo = async (req, res) => {
 		};
 
 		// Retry processing
-		processVideoAsync(blogPost._id, blogPost.videoId, user, metadata);
+		processVideoAsync(blogPost._id, blogPost.videoId, user, metadata, blogPost.aiModel);
 
 		res.json({
 			message: 'Video processing restarted',

@@ -140,10 +140,9 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# Markdown files (except README.md)
-*.md
-!README.md
-!readme.md
+# Backup files and temporary files
+*.tmp
+*.temp
 
 # Backup files
 *.bak
@@ -158,4 +157,27 @@ Temporary Items
 *.pem
 
 # Local development
-.vite 
+.vite
+
+# Security sensitive files
+*.key
+*.p12
+*.p8
+*.pfx
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+
+# Database backups
+/server/backups/
+*.sql
+*.dump
+
+# AI model files (if any)
+*.model
+*.weights
+
+# Application logs
+/server/logs/
+*.log 
