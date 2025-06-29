@@ -270,7 +270,41 @@ export function BlogPostPage() {
 										lineHeight: '1.8',
 									}}
 								>
-									<ReactMarkdown remarkPlugins={[remarkGfm]}>
+									<ReactMarkdown
+										remarkPlugins={[remarkGfm]}
+										components={{
+											h1: ({ children, ...props }) => {
+												const text = children?.toString() || '';
+												const sectionIndex = post.generatedContent?.sections?.findIndex((section) => section.heading === text);
+												const id = sectionIndex !== -1 ? `section-${sectionIndex}` : undefined;
+												return (
+													<h1 id={id} {...props}>
+														{children}
+													</h1>
+												);
+											},
+											h2: ({ children, ...props }) => {
+												const text = children?.toString() || '';
+												const sectionIndex = post.generatedContent?.sections?.findIndex((section) => section.heading === text);
+												const id = sectionIndex !== -1 ? `section-${sectionIndex}` : undefined;
+												return (
+													<h2 id={id} {...props}>
+														{children}
+													</h2>
+												);
+											},
+											h3: ({ children, ...props }) => {
+												const text = children?.toString() || '';
+												const sectionIndex = post.generatedContent?.sections?.findIndex((section) => section.heading === text);
+												const id = sectionIndex !== -1 ? `section-${sectionIndex}` : undefined;
+												return (
+													<h3 id={id} {...props}>
+														{children}
+													</h3>
+												);
+											},
+										}}
+									>
 										{(() => {
 											let content = post.generatedContent?.content || 'No content available';
 
