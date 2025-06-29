@@ -1,10 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@/types';
 import { authService } from '@/services/authService';
 
 interface AuthContextType {
 	user: User | null;
-	token: string | null;
 	login: (email: string, password: string) => Promise<void>;
 	register: (email: string, password: string, name: string) => Promise<void>;
 	logout: () => void;
@@ -16,61 +15,56 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const [user, setUser] = useState<User | null>(null);
-	const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
-		if (token) {
-			authService
-				.getProfile()
-				.then((userData) => {
-					setUser(userData);
-				})
-				.catch(() => {
-					localStorage.removeItem('token');
-					setToken(null);
-				})
-				.finally(() => {
-					setIsLoading(false);
-				});
-		} else {
-			setIsLoading(false);
-		}
-	}, [token]);
+		// Try to get user profile on app start to check if user is authenticated via cookies
+		authService
+			.getProfile()
+			.then((userData) => {
+				console.log('User authenticated:', userData);
+				setUser(userData);
+			})
+			.catch((error) => {
+				// User is not authenticated, this is fine
+				console.log('User not authenticated (expected):', error.response?.status);
+				setUser(null);
+			})
+			.finally(() => {
+				setIsLoading(false);
+			});
+	}, []);
 
 	const login = async (email: string, password: string) => {
+		console.log('Attempting login for:', email);
 		const response = await authService.login(email, password);
-		setToken(response.token);
+		console.log('Login successful:', response);
 		setUser(response.user);
-		localStorage.setItem('token', response.token);
 	};
 
 	const register = async (email: string, password: string, name: string) => {
 		const response = await authService.register(email, password, name);
-		setToken(response.token);
 		setUser(response.user);
-		localStorage.setItem('token', response.token);
 	};
 
 	const refreshUser = async () => {
-		if (token) {
-			try {
-				const userData = await authService.getProfile();
-				setUser(userData);
-			} catch (error) {
-				console.error('Failed to refresh user data:', error);
-			}
+		try {
+			const userData = await authService.getProfile();
+			setUser(userData);
+		} catch (error) {
+			console.error('Failed to refresh user data:', error);
+			setUser(null);
 		}
 	};
 
 	const logout = () => {
 		setUser(null);
-		setToken(null);
-		localStorage.removeItem('token');
+		// Call the logout endpoint to clear server-side cookies
+		authService.logout().catch(console.error);
 	};
 
 	return (
-		<AuthContext.Provider value={{ user, token, login, register, logout, refreshUser, isLoading }}>
+		<AuthContext.Provider value={{ user, login, register, logout, refreshUser, isLoading }}>
 			{children}
 		</AuthContext.Provider>
 	);

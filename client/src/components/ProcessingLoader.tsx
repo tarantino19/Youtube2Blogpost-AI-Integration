@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Coffee, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Coffee, Clock, CheckCircle } from 'lucide-react';
+import { api } from '@/services/api';
 
 interface ProcessingLoaderProps {
 	postId: string;
@@ -7,56 +8,67 @@ interface ProcessingLoaderProps {
 	onError: (error: string) => void;
 }
 
+interface VideoStatus {
+	id: string;
+	status: 'processing' | 'completed' | 'failed';
+	processingStep?:
+		| 'extracting_transcript'
+		| 'fetching_comments'
+		| 'generating_content'
+		| 'extracting_keywords'
+		| 'saving_content'
+		| 'finalizing';
+	error?: string;
+	videoTitle: string;
+	videoThumbnail: string;
+	createdAt: string;
+}
+
 export function ProcessingLoader({ postId, onComplete, onError }: ProcessingLoaderProps) {
-	const [step, setStep] = useState(0);
+	const [currentStep, setCurrentStep] = useState<string>('extracting_transcript');
 	const [elapsed, setElapsed] = useState(0);
 
-	const steps = [
-		{ icon: '🎬', text: 'Extracting video transcript...' },
-		{ icon: '🧠', text: 'Analyzing content with AI...' },
-		{ icon: '✍️', text: 'Generating blog post...' },
-		{ icon: '🎨', text: 'Formatting and structuring...' },
-	];
+	const stepConfig = {
+		extracting_transcript: { icon: '🎬', text: 'Extracting video transcript...', order: 0 },
+		fetching_comments: { icon: '💬', text: 'Fetching video comments...', order: 1 },
+		generating_content: { icon: '🧠', text: 'Generating blog content with AI...', order: 2 },
+		extracting_keywords: { icon: '🔍', text: 'Extracting SEO keywords...', order: 3 },
+		saving_content: { icon: '💾', text: 'Saving your blog post...', order: 4 },
+		finalizing: { icon: '✨', text: 'Adding final touches...', order: 5 },
+	};
+
+	const allSteps = Object.keys(stepConfig).sort(
+		(a, b) => stepConfig[a as keyof typeof stepConfig].order - stepConfig[b as keyof typeof stepConfig].order
+	);
 
 	useEffect(() => {
-		const stepInterval = setInterval(() => {
-			setStep((prev) => (prev + 1) % steps.length);
-		}, 3000);
-
 		const timeInterval = setInterval(() => {
 			setElapsed((prev) => prev + 1);
 		}, 1000);
 
-		// Poll for completion every 5 seconds
+		// Poll for status updates every 2 seconds
 		const pollInterval = setInterval(async () => {
 			try {
-				const response = await fetch(`/api/videos/${postId}/status`, {
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem('token')}`,
-					},
-				});
+				const response = await api.get(`/videos/${postId}/status`);
+				const data: VideoStatus = response.data;
 
-				if (response.ok) {
-					const data = await response.json();
-					if (data.status === 'completed') {
-						clearInterval(pollInterval);
-						clearInterval(stepInterval);
-						clearInterval(timeInterval);
-						onComplete();
-					} else if (data.status === 'failed') {
-						clearInterval(pollInterval);
-						clearInterval(stepInterval);
-						clearInterval(timeInterval);
-						onError(data.error || 'Processing failed');
-					}
+				if (data.status === 'completed') {
+					clearInterval(pollInterval);
+					clearInterval(timeInterval);
+					onComplete();
+				} else if (data.status === 'failed') {
+					clearInterval(pollInterval);
+					clearInterval(timeInterval);
+					onError(data.error || 'Processing failed');
+				} else if (data.status === 'processing' && data.processingStep) {
+					setCurrentStep(data.processingStep);
 				}
 			} catch (error) {
 				console.error('Error polling status:', error);
 			}
-		}, 5000);
+		}, 2000);
 
 		return () => {
-			clearInterval(stepInterval);
 			clearInterval(timeInterval);
 			clearInterval(pollInterval);
 		};
@@ -68,13 +80,32 @@ export function ProcessingLoader({ postId, onComplete, onError }: ProcessingLoad
 		return `${mins}:${secs.toString().padStart(2, '0')}`;
 	};
 
+	const getCurrentStepConfig = () => {
+		return stepConfig[currentStep as keyof typeof stepConfig] || stepConfig.extracting_transcript;
+	};
+
+	const getProgressPercentage = () => {
+		const currentStepIndex = allSteps.indexOf(currentStep);
+		return ((currentStepIndex + 1) / allSteps.length) * 100;
+	};
+
+	const isStepCompleted = (step: string) => {
+		const currentStepIndex = allSteps.indexOf(currentStep);
+		const stepIndex = allSteps.indexOf(step);
+		return stepIndex < currentStepIndex;
+	};
+
+	const isStepCurrent = (step: string) => {
+		return step === currentStep;
+	};
+
 	return (
 		<div className='max-w-2xl mx-auto px-4 py-12'>
 			<div className='bg-white rounded-xl shadow-lg p-8 text-center'>
 				{/* Main Icon */}
 				<div className='mb-6'>
 					<div className='w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4'>
-						<span className='text-3xl'>{steps[step].icon}</span>
+						<span className='text-3xl'>{getCurrentStepConfig().icon}</span>
 					</div>
 					<h2 className='text-2xl font-bold text-gray-900 mb-2'>Processing Your Video</h2>
 					<p className='text-gray-600'>We're working our magic to turn your video into an amazing blog post!</p>
@@ -85,14 +116,14 @@ export function ProcessingLoader({ postId, onComplete, onError }: ProcessingLoad
 					<div className='flex items-center justify-center mb-4'>
 						<div className='flex items-center space-x-2'>
 							<div className='w-3 h-3 bg-red-500 rounded-full animate-pulse'></div>
-							<span className='text-lg font-medium text-gray-800'>{steps[step].text}</span>
+							<span className='text-lg font-medium text-gray-800'>{getCurrentStepConfig().text}</span>
 						</div>
 					</div>
 
 					<div className='w-full bg-gray-200 rounded-full h-2 mb-4'>
 						<div
 							className='bg-gradient-to-r from-red-500 to-orange-500 h-2 rounded-full transition-all duration-1000 ease-out'
-							style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+							style={{ width: `${getProgressPercentage()}%` }}
 						></div>
 					</div>
 
@@ -113,17 +144,32 @@ export function ProcessingLoader({ postId, onComplete, onError }: ProcessingLoad
 						<h3 className='text-lg font-semibold text-amber-800'>Perfect Time for a Coffee Break!</h3>
 					</div>
 					<p className='text-amber-700 text-sm leading-relaxed'>
-						Why not grab your favorite beverage while our AI works its magic? ☕<br />
+						Why not grab your favorite beverage while our AI works its magic? ☕
+						<br />
 						We'll have your perfectly formatted blog post ready when you return!
 					</p>
 				</div>
 
-				{/* Fun Facts */}
+				{/* Detailed Progress Steps */}
 				<div className='text-left space-y-3'>
 					<h4 className='font-semibold text-gray-900 text-center mb-3'>What's happening behind the scenes:</h4>
 					<div className='grid gap-3'>
 						<div className='flex items-start space-x-3'>
-							<CheckCircle className='w-5 h-5 text-green-500 mt-0.5 flex-shrink-0' />
+							<div
+								className={`w-5 h-5 mt-0.5 flex-shrink-0 rounded-full ${
+									isStepCompleted('extracting_transcript')
+										? 'bg-green-500'
+										: isStepCurrent('extracting_transcript')
+										? 'bg-blue-500 animate-pulse'
+										: 'bg-gray-300'
+								} flex items-center justify-center`}
+							>
+								{isStepCompleted('extracting_transcript') ? (
+									<CheckCircle className='w-3 h-3 text-white' />
+								) : (
+									<div className='w-2 h-2 bg-white rounded-full'></div>
+								)}
+							</div>
 							<div>
 								<span className='font-medium text-gray-800'>Extracting Transcript:</span>
 								<span className='text-gray-600 ml-1'>Using multiple methods for best accuracy</span>
@@ -132,44 +178,98 @@ export function ProcessingLoader({ postId, onComplete, onError }: ProcessingLoad
 						<div className='flex items-start space-x-3'>
 							<div
 								className={`w-5 h-5 mt-0.5 flex-shrink-0 rounded-full ${
-									step >= 1 ? 'bg-green-500' : 'bg-gray-300'
+									isStepCompleted('fetching_comments')
+										? 'bg-green-500'
+										: isStepCurrent('fetching_comments')
+										? 'bg-blue-500 animate-pulse'
+										: 'bg-gray-300'
 								} flex items-center justify-center`}
 							>
-								{step >= 1 ? (
+								{isStepCompleted('fetching_comments') ? (
 									<CheckCircle className='w-3 h-3 text-white' />
 								) : (
 									<div className='w-2 h-2 bg-white rounded-full'></div>
 								)}
 							</div>
 							<div>
-								<span className='font-medium text-gray-800'>AI Analysis:</span>
-								<span className='text-gray-600 ml-1'>Understanding content and structure</span>
+								<span className='font-medium text-gray-800'>Fetching Comments:</span>
+								<span className='text-gray-600 ml-1'>Gathering additional context from viewers</span>
 							</div>
 						</div>
 						<div className='flex items-start space-x-3'>
 							<div
 								className={`w-5 h-5 mt-0.5 flex-shrink-0 rounded-full ${
-									step >= 2 ? 'bg-green-500' : 'bg-gray-300'
+									isStepCompleted('generating_content')
+										? 'bg-green-500'
+										: isStepCurrent('generating_content')
+										? 'bg-blue-500 animate-pulse'
+										: 'bg-gray-300'
 								} flex items-center justify-center`}
 							>
-								{step >= 2 ? (
+								{isStepCompleted('generating_content') ? (
 									<CheckCircle className='w-3 h-3 text-white' />
 								) : (
 									<div className='w-2 h-2 bg-white rounded-full'></div>
 								)}
 							</div>
 							<div>
-								<span className='font-medium text-gray-800'>Content Generation:</span>
+								<span className='font-medium text-gray-800'>AI Content Generation:</span>
 								<span className='text-gray-600 ml-1'>Creating engaging, SEO-optimized content</span>
 							</div>
 						</div>
 						<div className='flex items-start space-x-3'>
 							<div
 								className={`w-5 h-5 mt-0.5 flex-shrink-0 rounded-full ${
-									step >= 3 ? 'bg-green-500' : 'bg-gray-300'
+									isStepCompleted('extracting_keywords')
+										? 'bg-green-500'
+										: isStepCurrent('extracting_keywords')
+										? 'bg-blue-500 animate-pulse'
+										: 'bg-gray-300'
 								} flex items-center justify-center`}
 							>
-								{step >= 3 ? (
+								{isStepCompleted('extracting_keywords') ? (
+									<CheckCircle className='w-3 h-3 text-white' />
+								) : (
+									<div className='w-2 h-2 bg-white rounded-full'></div>
+								)}
+							</div>
+							<div>
+								<span className='font-medium text-gray-800'>SEO Keywords:</span>
+								<span className='text-gray-600 ml-1'>Extracting relevant keywords for search optimization</span>
+							</div>
+						</div>
+						<div className='flex items-start space-x-3'>
+							<div
+								className={`w-5 h-5 mt-0.5 flex-shrink-0 rounded-full ${
+									isStepCompleted('saving_content')
+										? 'bg-green-500'
+										: isStepCurrent('saving_content')
+										? 'bg-blue-500 animate-pulse'
+										: 'bg-gray-300'
+								} flex items-center justify-center`}
+							>
+								{isStepCompleted('saving_content') ? (
+									<CheckCircle className='w-3 h-3 text-white' />
+								) : (
+									<div className='w-2 h-2 bg-white rounded-full'></div>
+								)}
+							</div>
+							<div>
+								<span className='font-medium text-gray-800'>Saving Content:</span>
+								<span className='text-gray-600 ml-1'>Organizing and storing your blog post</span>
+							</div>
+						</div>
+						<div className='flex items-start space-x-3'>
+							<div
+								className={`w-5 h-5 mt-0.5 flex-shrink-0 rounded-full ${
+									isStepCompleted('finalizing')
+										? 'bg-green-500'
+										: isStepCurrent('finalizing')
+										? 'bg-blue-500 animate-pulse'
+										: 'bg-gray-300'
+								} flex items-center justify-center`}
+							>
+								{isStepCompleted('finalizing') ? (
 									<CheckCircle className='w-3 h-3 text-white' />
 								) : (
 									<div className='w-2 h-2 bg-white rounded-full'></div>

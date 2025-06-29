@@ -1,7 +1,7 @@
 export interface User {
 	_id: string;
 	email: string;
-	name: string;
+	name?: string;
 	createdAt: string;
 	subscription?: {
 		plan: string;
@@ -32,6 +32,13 @@ export interface BlogPost {
 		keywords?: string[];
 	};
 	status: 'processing' | 'completed' | 'failed';
+	processingStep?:
+		| 'extracting_transcript'
+		| 'fetching_comments'
+		| 'generating_content'
+		| 'extracting_keywords'
+		| 'saving_content'
+		| 'finalizing';
 	wordCount?: number;
 	readingTime?: number;
 	createdAt: string;
@@ -39,7 +46,6 @@ export interface BlogPost {
 }
 
 export interface AuthResponse {
-	token: string;
 	user: User;
 }
 

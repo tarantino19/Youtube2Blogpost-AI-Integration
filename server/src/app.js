@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const config = require('./config/config');
 const {
 	securityHeaders,
+	productionSecurity,
 	globalRateLimit,
 	sanitizeInput,
 	requestSizeLimit,
@@ -17,6 +18,7 @@ const app = express();
 
 // Security middleware (order matters!)
 app.use(environmentSecurity);
+app.use(productionSecurity);
 app.use(securityHeaders);
 app.use(globalRateLimit);
 app.use(requestSizeLimit);
@@ -33,9 +35,17 @@ app.use(morgan(config.isDevelopment ? 'dev' : 'combined'));
 // Database connection
 mongoose
 	.connect(config.mongodb.uri, config.mongodb.options)
-	.then(() => console.log('✅ MongoDB connected successfully'))
+	.then(() => {
+		if (config.isDevelopment) {
+			console.log('✅ MongoDB connected successfully');
+		}
+	})
 	.catch((err) => {
-		console.error('❌ MongoDB connection error:', err);
+		if (config.isDevelopment) {
+			console.error('❌ MongoDB connection error:', err);
+		} else {
+			console.error('❌ Database connection failed');
+		}
 		// Exit process on database connection failure in production
 		if (config.isProduction) {
 			process.exit(1);
@@ -54,9 +64,15 @@ app.get('/api/health', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-	console.error(err.stack);
+	// Log full error details only in development
+	if (config.isDevelopment) {
+		console.error(err.stack);
+	} else {
+		console.error('Server error:', err.message);
+	}
+
 	res.status(err.status || 500).json({
-		error: err.message || 'Something went wrong!',
+		error: config.isDevelopment ? err.message : 'Something went wrong!',
 		...(config.isDevelopment && { stack: err.stack }),
 	});
 });
@@ -69,12 +85,14 @@ app.use((req, res) => {
 const PORT = config.port;
 app.listen(PORT, () => {
 	console.log(`🚀 Server running on port ${PORT} in ${config.env} mode`);
-	console.log(`📊 Database: ${config.mongodb.uri.split('@')[1] || 'localhost'}`);
-	console.log(
-		`🤖 AI Services: ${config.openai.hasApiKey ? 'OpenAI' : ''} ${config.anthropic.hasApiKey ? 'Anthropic' : ''} ${
-			config.gemini.hasApiKey ? 'Gemini' : ''
-		}`
-	);
+	if (config.isDevelopment) {
+		console.log(`📊 Database: ${config.mongodb.uri.split('@')[1] || 'localhost'}`);
+		console.log(
+			`🤖 AI Services: ${config.openai.hasApiKey ? 'OpenAI' : ''} ${config.anthropic.hasApiKey ? 'Anthropic' : ''} ${
+				config.gemini.hasApiKey ? 'Gemini' : ''
+			}`
+		);
+	}
 });
 
 module.exports = app;

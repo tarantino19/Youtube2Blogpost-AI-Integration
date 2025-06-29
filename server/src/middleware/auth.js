@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const logger = require('../utils/secureLogger');
 
 const generateToken = (userId) => {
 	const secret = process.env.JWT_SECRET;
@@ -41,13 +42,32 @@ const authenticate = async (req, res, next) => {
 		}
 
 		const decoded = verifyToken(token);
+
+		// Additional security check: ensure token is not too old
+		const tokenAge = Date.now() / 1000 - decoded.iat;
+		const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
+		if (tokenAge > maxAge) {
+			throw new Error('Token expired');
+		}
+
 		const user = await User.findById(decoded.id).select('-password');
 
 		if (!user) {
+			// Log potential security issue
+			logger.security('Authentication attempt with non-existent user', {
+				userId: decoded.id,
+				ip: req.ip,
+				userAgent: req.get('User-Agent'),
+			});
 			throw new Error('User not found');
 		}
 
 		if (!user.isActive) {
+			logger.security('Authentication attempt with deactivated account', {
+				userId: user._id,
+				email: user.email,
+				ip: req.ip,
+			});
 			throw new Error('Account is deactivated');
 		}
 
@@ -60,6 +80,14 @@ const authenticate = async (req, res, next) => {
 		req.token = token;
 		next();
 	} catch (error) {
+		// Log authentication failures for security monitoring
+		logger.security('Authentication failed', {
+			error: error.message,
+			ip: req.ip,
+			userAgent: req.get('User-Agent'),
+			url: req.url,
+		});
+
 		res.status(401).json({ error: error.message || 'Please authenticate' });
 	}
 };
@@ -101,6 +129,13 @@ const checkSubscription = (requiredPlan = 'free') => {
 		const requiredPlanLevel = planHierarchy[requiredPlan] || 0;
 
 		if (userPlanLevel < requiredPlanLevel) {
+			logger.security('Unauthorized access attempt to premium feature', {
+				userId: req.user._id,
+				currentPlan: req.user.subscription.plan,
+				requiredPlan,
+				ip: req.ip,
+			});
+
 			return res.status(403).json({
 				error: `This feature requires ${requiredPlan} plan or higher`,
 				currentPlan: req.user.subscription.plan,
@@ -118,6 +153,8 @@ const checkCredits = async (req, res, next) => {
 	}
 
 	if (req.user.subscription.creditsRemaining <= 0) {
+		logger.dev('Credits exhausted for user', req.user._id);
+
 		return res.status(403).json({
 			error: 'No credits remaining',
 			creditsRemaining: 0,

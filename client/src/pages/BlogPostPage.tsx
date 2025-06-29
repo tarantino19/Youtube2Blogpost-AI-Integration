@@ -23,9 +23,14 @@ export function BlogPostPage() {
 
 	const updateMutation = useMutation({
 		mutationFn: (updates: any) => postService.updatePost(id!, updates),
-		onSuccess: () => {
+		onSuccess: (updatedPost) => {
+			console.log('Post updated successfully:', updatedPost);
 			queryClient.invalidateQueries({ queryKey: ['post', id] });
+			queryClient.invalidateQueries({ queryKey: ['posts'] });
 			setIsEditing(false);
+		},
+		onError: (error) => {
+			console.error('Failed to update post:', error);
 		},
 	});
 
@@ -55,12 +60,14 @@ export function BlogPostPage() {
 	};
 
 	const handleSave = () => {
+		console.log('Saving post with:', {
+			title: editedTitle,
+			content: editedContent.substring(0, 100) + '...',
+		});
+
 		updateMutation.mutate({
-			generatedContent: {
-				...post?.generatedContent,
-				title: editedTitle,
-				content: editedContent,
-			},
+			title: editedTitle,
+			content: editedContent,
 		});
 	};
 

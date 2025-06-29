@@ -13,8 +13,8 @@ export const postService = {
 	},
 
 	async updatePost(id: string, updates: Partial<BlogPost>): Promise<BlogPost> {
-		const { data } = await api.put<BlogPost>(`/posts/${id}`, updates);
-		return data;
+		const { data } = await api.put<{ message: string; post: BlogPost }>(`/posts/${id}`, updates);
+		return data.post;
 	},
 
 	async deletePost(id: string): Promise<void> {

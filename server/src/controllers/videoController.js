@@ -101,16 +101,19 @@ async function processVideoAsync(blogPostId, videoId, user, metadata, modelId) {
 
 		// Get transcript
 		console.log(`📝 Fetching transcript for video ${videoId}...`);
+		await BlogPost.findByIdAndUpdate(blogPostId, { processingStep: 'extracting_transcript' });
 		const transcriptData = await youtubeService.getTranscript(videoId, metadata.language);
 		console.log(`✅ Transcript received: ${transcriptData.transcript.length} characters`);
 
 		// Get video comments for additional context
 		console.log(`💬 Fetching comments for video ${videoId}...`);
+		await BlogPost.findByIdAndUpdate(blogPostId, { processingStep: 'fetching_comments' });
 		const comments = await youtubeService.getVideoComments(videoId);
 		console.log(`✅ Comments received: ${comments.length} comments`);
 
 		// Generate blog post with AI
 		console.log(`🤖 Generating blog post content with AI model: ${selectedModel}...`);
+		await BlogPost.findByIdAndUpdate(blogPostId, { processingStep: 'generating_content' });
 		const generatedContent = await aiService.generateBlogPost(
 			transcriptData.transcript,
 			metadata.title,
@@ -138,11 +141,13 @@ async function processVideoAsync(blogPostId, videoId, user, metadata, modelId) {
 
 		// Extract keywords for SEO
 		console.log(`🔍 Extracting keywords...`);
+		await BlogPost.findByIdAndUpdate(blogPostId, { processingStep: 'extracting_keywords' });
 		const keywords = await aiService.extractKeywords(generatedContent.content, selectedModel);
 		console.log(`✅ Keywords extracted: ${keywords.length} keywords`);
 
 		// Update blog post with all required fields at once
 		console.log(`💾 Updating blog post with generated content...`);
+		await BlogPost.findByIdAndUpdate(blogPostId, { processingStep: 'saving_content' });
 
 		// Ensure we're not accidentally stringifying the content
 		let contentToSave;
@@ -211,6 +216,7 @@ async function processVideoAsync(blogPostId, videoId, user, metadata, modelId) {
 
 		// Automatically fix content structure after successful generation
 		console.log(`🔧 Auto-fixing blog content structure for post ${blogPostId}...`);
+		await BlogPost.findByIdAndUpdate(blogPostId, { processingStep: 'finalizing' });
 		try {
 			const scriptPath = path.join(__dirname, '../../scripts/fix-blog-content.js');
 			const command = `node "${scriptPath}" --postId=${blogPostId}`;
@@ -264,7 +270,7 @@ const getVideoStatus = async (req, res) => {
 		}
 
 		const blogPost = await BlogPost.findOne({ _id: id, userId }).select(
-			'status error videoTitle videoThumbnail createdAt'
+			'status processingStep error videoTitle videoThumbnail createdAt'
 		);
 
 		if (!blogPost) {
@@ -274,6 +280,7 @@ const getVideoStatus = async (req, res) => {
 		res.json({
 			id: blogPost._id,
 			status: blogPost.status,
+			processingStep: blogPost.processingStep,
 			error: blogPost.error,
 			videoTitle: blogPost.videoTitle,
 			videoThumbnail: blogPost.videoThumbnail,
@@ -359,6 +366,7 @@ const retryVideo = async (req, res) => {
 
 		// Reset status and retry
 		blogPost.status = 'processing';
+		blogPost.processingStep = 'extracting_transcript';
 		blogPost.error = null;
 		await blogPost.save();
 

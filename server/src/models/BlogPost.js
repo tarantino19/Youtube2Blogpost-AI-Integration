@@ -88,6 +88,18 @@ const blogPostSchema = new mongoose.Schema({
 		default: 'processing',
 		index: true,
 	},
+	processingStep: {
+		type: String,
+		enum: [
+			'extracting_transcript',
+			'fetching_comments',
+			'generating_content',
+			'extracting_keywords',
+			'saving_content',
+			'finalizing',
+		],
+		default: 'extracting_transcript',
+	},
 	error: {
 		type: String,
 	},

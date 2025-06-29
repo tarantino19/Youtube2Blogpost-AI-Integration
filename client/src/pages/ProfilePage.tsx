@@ -1,29 +1,29 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+
 import { api } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface UserProfile {
-	id: string;
-	username: string;
+	_id: string;
 	email: string;
-	firstName?: string;
-	lastName?: string;
+	name?: string;
 	subscription?: {
 		plan: string;
 		creditsRemaining: number;
 		resetDate: string;
 	};
 	createdAt: string;
+	memberSince?: string;
+	daysUntilReset?: number;
 }
 
 export const ProfilePage = () => {
-	const { user } = useAuth();
+	const { refreshUser } = useAuth();
 	const [profile, setProfile] = useState<UserProfile | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [editing, setEditing] = useState(false);
 	const [formData, setFormData] = useState({
-		firstName: '',
-		lastName: '',
+		name: '',
 		email: '',
 	});
 	const [passwordData, setPasswordData] = useState({
@@ -45,9 +45,9 @@ export const ProfilePage = () => {
 			// Backend returns { user: profileData }, so extract the user object
 			const profileData = response.data.user || response.data;
 			setProfile(profileData);
+
 			setFormData({
-				firstName: profileData.firstName || '',
-				lastName: profileData.lastName || '',
+				name: profileData.name || '',
 				email: profileData.email || '',
 			});
 		} catch (error) {
@@ -64,12 +64,26 @@ export const ProfilePage = () => {
 		setMessage('');
 
 		try {
-			const response = await api.put('/auth/profile', formData);
+			// Validate that we have at least a name
+			if (!formData.name.trim()) {
+				setError('Please enter a name');
+				return;
+			}
+
+			const updateData = {
+				name: formData.name,
+				email: formData.email,
+			};
+
+			const response = await api.put('/auth/profile', updateData);
 			// Backend returns { user: userData }, so extract the user object
 			const userData = response.data.user || response.data;
 			setProfile(userData);
 			setEditing(false);
 			setMessage('Profile updated successfully!');
+
+			// Refresh the global user state in AuthContext
+			await refreshUser();
 		} catch (error: any) {
 			setError(error.response?.data?.error || 'Failed to update profile');
 		}
@@ -154,8 +168,8 @@ export const ProfilePage = () => {
 							<h2 className='text-lg font-medium text-gray-900 mb-4'>Account Information</h2>
 							<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
 								<div>
-									<label className='block text-sm font-medium text-gray-700'>Username</label>
-									<p className='mt-1 text-sm text-gray-900'>{profile.username}</p>
+									<label className='block text-sm font-medium text-gray-700'>Email</label>
+									<p className='mt-1 text-sm text-gray-900'>{profile.email}</p>
 								</div>
 								<div>
 									<label className='block text-sm font-medium text-gray-700'>Member Since</label>
@@ -201,25 +215,14 @@ export const ProfilePage = () => {
 
 							{editing ? (
 								<form onSubmit={handleUpdateProfile} className='space-y-4'>
-									<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-										<div>
-											<label className='block text-sm font-medium text-gray-700'>First Name</label>
-											<input
-												type='text'
-												value={formData.firstName}
-												onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-												className='mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-											/>
-										</div>
-										<div>
-											<label className='block text-sm font-medium text-gray-700'>Last Name</label>
-											<input
-												type='text'
-												value={formData.lastName}
-												onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-												className='mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-											/>
-										</div>
+									<div>
+										<label className='block text-sm font-medium text-gray-700'>Name</label>
+										<input
+											type='text'
+											value={formData.name}
+											onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+											className='mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+										/>
 									</div>
 									<div>
 										<label className='block text-sm font-medium text-gray-700'>Email</label>
@@ -244,16 +247,12 @@ export const ProfilePage = () => {
 									</div>
 								</form>
 							) : (
-								<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+								<div className='space-y-4'>
 									<div>
-										<label className='block text-sm font-medium text-gray-700'>First Name</label>
-										<p className='mt-1 text-sm text-gray-900'>{profile.firstName || 'Not set'}</p>
+										<label className='block text-sm font-medium text-gray-700'>Name</label>
+										<p className='mt-1 text-sm text-gray-900'>{profile.name || 'Not set'}</p>
 									</div>
 									<div>
-										<label className='block text-sm font-medium text-gray-700'>Last Name</label>
-										<p className='mt-1 text-sm text-gray-900'>{profile.lastName || 'Not set'}</p>
-									</div>
-									<div className='md:col-span-2'>
 										<label className='block text-sm font-medium text-gray-700'>Email</label>
 										<p className='mt-1 text-sm text-gray-900'>{profile.email}</p>
 									</div>

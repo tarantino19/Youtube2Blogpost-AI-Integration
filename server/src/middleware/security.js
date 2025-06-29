@@ -1,5 +1,6 @@
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const logger = require('../utils/secureLogger');
 
 // Enhanced security headers
 const securityHeaders = helmet({
@@ -14,6 +15,9 @@ const securityHeaders = helmet({
 			objectSrc: ["'none'"],
 			mediaSrc: ["'self'"],
 			frameSrc: ["'none'"],
+			// Prevent source map access
+			workerSrc: ["'none'"],
+			manifestSrc: ["'self'"],
 		},
 	},
 	crossOriginEmbedderPolicy: false, // Allows embedding for development
@@ -22,7 +26,39 @@ const securityHeaders = helmet({
 		includeSubDomains: true,
 		preload: true,
 	},
+	// Additional security headers
+	noSniff: true,
+	frameguard: { action: 'deny' },
+	xssFilter: true,
+	referrerPolicy: { policy: 'same-origin' },
 });
+
+// Production-only security middleware
+const productionSecurity = (req, res, next) => {
+	if (process.env.NODE_ENV === 'production') {
+		// Block access to source maps and dev files
+		if (
+			req.url.match(/\.(map|ts|tsx)$/i) ||
+			req.url.includes('/@vite/') ||
+			req.url.includes('/@react-refresh') ||
+			req.url.includes('/src/')
+		) {
+			return res.status(404).json({ error: 'Not found' });
+		}
+
+		// Remove server information
+		res.removeHeader('X-Powered-By');
+		res.removeHeader('Server');
+
+		// Add security headers
+		res.setHeader('X-Content-Type-Options', 'nosniff');
+		res.setHeader('X-Frame-Options', 'DENY');
+		res.setHeader('X-XSS-Protection', '1; mode=block');
+		res.setHeader('Referrer-Policy', 'same-origin');
+		res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+	}
+	next();
+};
 
 // Global rate limiter for all requests
 const globalRateLimit = rateLimit({
@@ -108,6 +144,9 @@ const securityLogger = (req, res, next) => {
 		/drop.*table/i, // SQL injection
 		/exec\(/i, // Code injection
 		/eval\(/i, // Code injection
+		/\.map$/i, // Source map access attempts
+		/\/@vite/i, // Vite dev server access
+		/\/src\//i, // Source code access
 	];
 
 	const checkSuspicious = (value) => {
@@ -121,7 +160,7 @@ const securityLogger = (req, res, next) => {
 		checkSuspicious(req.url) || checkSuspicious(JSON.stringify(req.body)) || checkSuspicious(JSON.stringify(req.query));
 
 	if (isSuspicious) {
-		console.warn(`🚨 Suspicious request detected:`, {
+		logger.security('Suspicious request detected', {
 			ip: req.ip,
 			userAgent: req.get('User-Agent'),
 			url: req.url,
@@ -155,6 +194,7 @@ const environmentSecurity = (req, res, next) => {
 
 module.exports = {
 	securityHeaders,
+	productionSecurity,
 	globalRateLimit,
 	strictRateLimit,
 	sanitizeInput,
