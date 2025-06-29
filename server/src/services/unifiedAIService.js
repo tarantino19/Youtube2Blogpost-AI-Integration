@@ -190,12 +190,13 @@ const generateBlogPost = async (
 ) => {
 	const { comments = [], tags = [], language = 'en' } = additionalContext;
 
-	const systemPrompt = `You are a professional content writer who creates engaging, SEO-optimized blog posts from video transcripts. 
-Your writing should be clear, informative, and maintain the original video's key messages while improving readability.
-Always structure content with proper headings, paragraphs, and formatting.
-Use markdown formatting for the content field - including proper headers (##, ###), bold text (**text**), bullet points, and links where appropriate.`;
+	const systemPrompt = `You are a professional content writer who creates comprehensive, detailed, and engaging blog posts from video transcripts. 
+Your writing should be thorough, informative, and maintain the original video's key messages while significantly expanding on them with detailed explanations, examples, and insights.
+Always structure content with proper headings, paragraphs, and formatting to create substantial, in-depth articles.
+Use markdown formatting for the content field - including proper headers (##, ###), bold text (**text**), bullet points, numbered lists, and links where appropriate.
+Aim for comprehensive coverage of the topic with detailed explanations and practical insights.`;
 
-	const userPrompt = `Convert the following YouTube video transcript into a well-structured, engaging blog post.
+	const userPrompt = `Convert the following YouTube video transcript into a comprehensive, detailed, and well-structured blog post that thoroughly covers the topic.
 
 Video Title: ${videoTitle}
 Video Description: ${videoDescription}
@@ -211,22 +212,30 @@ ${
 
 Transcript: ${transcript}
 
-Please create a blog post with:
+Please create a comprehensive blog post with:
 1. An engaging, SEO-friendly title (different from the video title)
-2. A compelling introduction that hooks the reader
-3. Well-organized sections with clear H2 and H3 headings
-4. Key takeaways or summary points
-5. A conclusion with a call-to-action
-6. 5-7 relevant tags for the blog post
-7. A meta description (150-160 characters) for SEO
+2. A compelling introduction that hooks the reader and provides context
+3. Well-organized sections with clear H2 and H3 headings that dive deep into each topic
+4. Detailed explanations with examples, practical applications, and actionable insights
+5. Multiple subsections within each main section to thoroughly cover the topic
+6. Key takeaways or summary points with detailed explanations
+7. A comprehensive conclusion with actionable next steps and call-to-action
+8. 5-7 relevant tags for the blog post
+9. A meta description (150-160 characters) for SEO
 
-Important guidelines:
-- Make the content scannable with short paragraphs (3-4 sentences max)
-- Use bullet points or numbered lists where appropriate
+Important guidelines for detailed content:
+- Create substantial paragraphs (5-7 sentences) with detailed explanations
+- Expand on concepts mentioned in the transcript with additional context and examples
+- Use bullet points and numbered lists for complex information
 - Include relevant quotes from the transcript using blockquotes (> quote)
-- Maintain a conversational yet professional tone
-- Ensure the content is valuable even without watching the video
-- Use proper markdown formatting`;
+- Add practical tips, best practices, and real-world applications
+- Maintain a conversational yet professional tone throughout
+- Ensure the content is comprehensive and valuable even without watching the video
+- Aim for thorough coverage of the topic with multiple angles and perspectives
+- Use proper markdown formatting with clear section breaks
+- Include detailed step-by-step processes where applicable
+- Add context and background information to make concepts accessible
+- Create content that serves as a complete resource on the topic`;
 
 	try {
 		const model = getModel(modelId);
@@ -239,7 +248,7 @@ Important guidelines:
 				system: systemPrompt,
 				prompt: userPrompt,
 				temperature: 0.7,
-				maxTokens: 4000,
+				maxTokens: 8000,
 			});
 
 			return object;
@@ -254,7 +263,7 @@ Important guidelines:
 					userPrompt +
 					'\n\nIMPORTANT: Return your response as a valid JSON object with the following structure:\n{\n  "title": "Blog post title",\n  "content": "Full blog post content in markdown format",\n  "summary": "Brief summary",\n  "sections": [{"heading": "Section heading", "content": "Section content"}],\n  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],\n  "metaDescription": "Meta description (max 160 chars)",\n  "keyTakeaways": ["takeaway1", "takeaway2", "takeaway3"]\n}',
 				temperature: 0.7,
-				maxTokens: 4000,
+				maxTokens: 8000,
 			});
 
 			// Try to parse the JSON response
