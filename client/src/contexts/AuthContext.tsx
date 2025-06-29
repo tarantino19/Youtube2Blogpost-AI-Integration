@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { User } from '@/types';
 import { authService } from '@/services/authService';
 
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const [user, setUser] = useState<User | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const queryClient = useQueryClient();
 
 	useEffect(() => {
 		// Try to get user profile on app start to check if user is authenticated via cookies
@@ -59,6 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const logout = () => {
 		setUser(null);
+		// Clear all cached queries to prevent data leakage between users
+		queryClient.clear();
 		// Call the logout endpoint to clear server-side cookies
 		authService.logout().catch(console.error);
 	};

@@ -16,7 +16,7 @@ export function RootLayout() {
 	};
 
 	return (
-		<div className='min-h-screen bg-gray-50'>
+		<div className='min-h-screen bg-gray-50 flex flex-col'>
 			<nav className='bg-white shadow-sm border-b'>
 				<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
 					<div className='flex justify-between h-16'>
@@ -155,12 +155,12 @@ export function RootLayout() {
 				</div>
 			</nav>
 
-			<main>
+			<main className='flex-1'>
 				<Outlet />
 			</main>
 
-			<footer className='bg-white border-t mt-auto'>
-				<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+			<footer className='bg-white border-t' style={{ height: '5vh' }}>
+				<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-center'>
 					<div className='text-center text-sm text-gray-600'>© 2025 YTtoText. All rights reserved.</div>
 				</div>
 			</footer>

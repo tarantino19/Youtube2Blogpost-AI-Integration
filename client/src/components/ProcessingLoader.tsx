@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Coffee, Clock, CheckCircle } from 'lucide-react';
 import { api } from '@/services/api';
 
@@ -27,6 +28,7 @@ interface VideoStatus {
 export function ProcessingLoader({ postId, onComplete, onError }: ProcessingLoaderProps) {
 	const [currentStep, setCurrentStep] = useState<string>('extracting_transcript');
 	const [elapsed, setElapsed] = useState(0);
+	const queryClient = useQueryClient();
 
 	const stepConfig = {
 		extracting_transcript: { icon: '🎬', text: 'Extracting video transcript...', order: 0 },
@@ -55,6 +57,10 @@ export function ProcessingLoader({ postId, onComplete, onError }: ProcessingLoad
 				if (data.status === 'completed') {
 					clearInterval(pollInterval);
 					clearInterval(timeInterval);
+					// Invalidate posts cache so the new post appears in the list immediately
+					queryClient.invalidateQueries({ queryKey: ['posts'] });
+					// Also invalidate the individual post query
+					queryClient.invalidateQueries({ queryKey: ['post', postId] });
 					onComplete();
 				} else if (data.status === 'failed') {
 					clearInterval(pollInterval);
@@ -72,7 +78,7 @@ export function ProcessingLoader({ postId, onComplete, onError }: ProcessingLoad
 			clearInterval(timeInterval);
 			clearInterval(pollInterval);
 		};
-	}, [postId, onComplete, onError]);
+	}, [postId, onComplete, onError, queryClient]);
 
 	const formatTime = (seconds: number) => {
 		const mins = Math.floor(seconds / 60);

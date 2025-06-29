@@ -37,6 +37,7 @@ export function BlogPostPage() {
 	const deleteMutation = useMutation({
 		mutationFn: () => postService.deletePost(id!),
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['posts'] });
 			navigate('/posts');
 		},
 	});
