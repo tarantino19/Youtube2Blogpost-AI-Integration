@@ -24,12 +24,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		authService
 			.getProfile()
 			.then((userData) => {
-				console.log('User authenticated:', userData);
 				setUser(userData);
 			})
 			.catch((error) => {
 				// User is not authenticated, this is fine
-				console.log('User not authenticated (expected):', error.response?.status);
 				setUser(null);
 			})
 			.finally(() => {
@@ -38,9 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	const login = async (email: string, password: string) => {
-		console.log('Attempting login for:', email);
 		const response = await authService.login(email, password);
-		console.log('Login successful:', response);
 		setUser(response.user);
 	};
 

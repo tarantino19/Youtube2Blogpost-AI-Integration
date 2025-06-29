@@ -23,10 +23,10 @@ export default defineConfig(({ mode }) => ({
 		}),
 	},
 	build: {
-		// Disable source maps in production for security
-		sourcemap: mode === 'development',
+		// CRITICAL: Disable source maps to prevent source code exposure in ALL modes
+		sourcemap: false,
 		// Minimize bundle size and remove debug info
-		minify: mode === 'production' ? 'terser' : false,
+		minify: mode === 'production' ? 'terser' : 'esbuild',
 		terserOptions:
 			mode === 'production'
 				? {
@@ -36,6 +36,14 @@ export default defineConfig(({ mode }) => ({
 						},
 				  }
 				: undefined,
+	},
+	// CRITICAL: Also disable sourcemaps in development mode
+	css: {
+		devSourcemap: false,
+	},
+	esbuild: {
+		// Remove console.log and debugger in both development and production
+		drop: ['console', 'debugger'],
 	},
 	define: {
 		// Remove development tools in production
