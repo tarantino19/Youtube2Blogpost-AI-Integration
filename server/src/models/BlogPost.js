@@ -81,6 +81,10 @@ const blogPostSchema = new mongoose.Schema({
 			maxlength: 160,
 		},
 		sections: [sectionSchema],
+		lastModified: {
+			type: Date,
+			default: Date.now,
+		},
 	},
 	status: {
 		type: String,
@@ -155,6 +159,11 @@ blogPostSchema.pre('save', function (next) {
 	// Set publishedAt when publishing
 	if (this.isPublished && !this.publishedAt) {
 		this.publishedAt = Date.now();
+	}
+
+	// Update generatedContent.lastModified when any generatedContent field changes
+	if (this.isModified('generatedContent')) {
+		this.generatedContent.lastModified = Date.now();
 	}
 
 	next();
