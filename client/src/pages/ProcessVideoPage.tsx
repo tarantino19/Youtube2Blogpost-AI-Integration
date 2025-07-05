@@ -5,6 +5,7 @@ import { videoService, AvailableModel } from '@/services/videoService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Youtube, AlertCircle } from 'lucide-react';
 import { ProcessingLoader } from '@/components/ProcessingLoader';
+import { ShareButton } from '@/components/ShareButton';
 
 export function ProcessVideoPage() {
 	const [videoUrl, setVideoUrl] = useState('');
@@ -91,10 +92,15 @@ export function ProcessVideoPage() {
 	return (
 		<div className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
 			<div className='bg-white rounded-lg shadow-lg p-8'>
-				<div className='text-center mb-8'>
-					<Youtube className='h-16 w-16 text-red-600 mx-auto mb-4' />
-					<h1 className='text-3xl font-bold text-gray-900 mb-2'>Process YouTube Video</h1>
-					<p className='text-gray-600'>Enter a YouTube URL to convert it into a blog post</p>
+				<div className='flex justify-between items-start mb-8'>
+					<div className='text-center flex-1'>
+						<Youtube className='h-16 w-16 text-red-600 mx-auto mb-4' />
+						<h1 className='text-3xl font-bold text-gray-900 mb-2'>Process YouTube Video</h1>
+						<p className='text-gray-600'>Enter a YouTube URL to convert it into a blog post</p>
+					</div>
+					<div className='flex-shrink-0'>
+						<ShareButton />
+					</div>
 				</div>
 
 				<form onSubmit={handleSubmit} className='space-y-6'>

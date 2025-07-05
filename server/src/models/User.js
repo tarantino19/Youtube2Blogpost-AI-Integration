@@ -35,6 +35,20 @@ const userSchema = new mongoose.Schema({
 			default: Date.now,
 		},
 	},
+	shareRewards: {
+		lastRewardDate: {
+			type: Date,
+			default: null,
+		},
+		monthlySharesCount: {
+			type: Number,
+			default: 0,
+		},
+		totalShareRewards: {
+			type: Number,
+			default: 0,
+		},
+	},
 	isActive: {
 		type: Boolean,
 		default: true,
@@ -101,6 +115,34 @@ userSchema.methods.checkAndResetCredits = function () {
 	}
 
 	return false;
+};
+
+// Check if user can earn share reward this month
+userSchema.methods.canEarnShareReward = function () {
+	const now = new Date();
+	const lastRewardDate = this.shareRewards.lastRewardDate;
+
+	if (!lastRewardDate) {
+		return true; // First time sharing
+	}
+
+	const daysSinceLastReward = Math.floor((now - lastRewardDate) / (1000 * 60 * 60 * 24));
+	return daysSinceLastReward >= 30; // Can earn reward once per month
+};
+
+// Award share reward
+userSchema.methods.awardShareReward = function () {
+	if (!this.canEarnShareReward()) {
+		throw new Error('Share reward already earned this month');
+	}
+
+	const now = new Date();
+	this.subscription.creditsRemaining += 5;
+	this.shareRewards.lastRewardDate = now;
+	this.shareRewards.monthlySharesCount += 1;
+	this.shareRewards.totalShareRewards += 5;
+
+	return this.save();
 };
 
 module.exports = mongoose.model('User', userSchema);

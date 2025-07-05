@@ -56,6 +56,7 @@ mongoose
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/videos', require('./routes/videos'));
 app.use('/api/posts', require('./routes/posts'));
+app.use('/api/shares', require('./routes/shares'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
