@@ -18,6 +18,11 @@ package-lock.json
 .env.test.local
 .env.production.local
 
+/CLAUDE.md
+CLAUDE.md
+/claude.md
+./claude.md
+
 # Logs
 logs
 *.log
