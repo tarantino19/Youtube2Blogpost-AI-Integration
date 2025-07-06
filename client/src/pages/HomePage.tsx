@@ -12,11 +12,11 @@ export function HomePage() {
 				<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
 					<div className='text-center'>
 						<h1 className='text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6'>
-							Transform YouTube Videos into
-							<span className='text-red-600'> Blog Posts</span>
+							Stop Wasting 6+ Hours Writing Blog Posts
+							<span className='text-red-600'> From Scratch</span>
 						</h1>
 						<p className='text-xl text-gray-600 mb-8 max-w-3xl mx-auto'>
-							Leverage AI to convert any YouTube video into well-structured, SEO-optimized blog content in minutes.
+							Turn ANY YouTube video into a complete, SEO-optimized blog post in under 5 minutes. No more staring at blank pages or struggling for content ideas.
 						</p>
 						<div className='flex flex-col sm:flex-row gap-4 justify-center'>
 							{user ? (

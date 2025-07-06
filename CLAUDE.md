@@ -196,3 +196,36 @@ Required variables are defined in `server/src/config/config.js`:
 - TypeScript for type safety
 - Vite for fast development builds
 - Comprehensive error handling and logging
+
+#### LocatorJS Setup (Always include in React projects)
+
+**Installation:**
+```bash
+npm install --save-dev @locator/babel-jsx @locator/runtime
+```
+
+**Vite Configuration (vite.config.ts):**
+```typescript
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react({
+      babel: {
+        plugins: mode === 'development' ? [['@locator/babel-jsx/dist', { env: 'development' }]] : [],
+      },
+    }),
+  ],
+  // ... rest of config
+}));
+```
+
+**Main Entry Point (src/main.tsx):**
+```typescript
+// Initialize locatorjs in development
+if (import.meta.env.DEV) {
+  import('@locator/runtime').then(({ setupLocator }) => {
+    setupLocator();
+  });
+}
+```
+
+**Usage:** Option+Click (Alt+Click) on React components to jump to source code (development only)
