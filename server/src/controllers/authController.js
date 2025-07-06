@@ -1,44 +1,22 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { generateToken, generateRefreshToken } = require('../middleware/auth');
-const { validateEmail, validatePassword, validateName, sanitizeInput } = require('../utils/validators');
 
 const register = async (req, res) => {
 	try {
 		const { email, password, name } = req.body;
 
-		// Sanitize inputs
-		const sanitizedEmail = sanitizeInput(email).toLowerCase();
-		const sanitizedName = sanitizeInput(name);
-
-		// Validation
-		if (!validateEmail(sanitizedEmail)) {
-			return res.status(400).json({ error: 'Invalid email format' });
-		}
-
-		if (!validatePassword(password)) {
-			return res.status(400).json({
-				error: 'Password must be at least 8 characters with uppercase, lowercase, and number',
-			});
-		}
-
-		if (!validateName(sanitizedName)) {
-			return res.status(400).json({
-				error: 'Name must be 2-50 characters and contain only letters, spaces, hyphens, and apostrophes',
-			});
-		}
-
 		// Check if user exists
-		const existingUser = await User.findOne({ email: sanitizedEmail });
+		const existingUser = await User.findOne({ email });
 		if (existingUser) {
 			return res.status(400).json({ error: 'Email already registered' });
 		}
 
 		// Create user
 		const user = new User({
-			email: sanitizedEmail,
+			email,
 			password,
-			name: sanitizedName,
+			name,
 		});
 
 		await user.save();
@@ -81,16 +59,8 @@ const login = async (req, res) => {
 	try {
 		const { email, password } = req.body;
 
-		// Sanitize email
-		const sanitizedEmail = sanitizeInput(email).toLowerCase();
-
-		// Validate inputs
-		if (!email || !password) {
-			return res.status(400).json({ error: 'Email and password are required' });
-		}
-
 		// Find user
-		const user = await User.findOne({ email: sanitizedEmail });
+		const user = await User.findOne({ email });
 		if (!user) {
 			return res.status(401).json({ error: 'Invalid credentials' });
 		}
@@ -235,29 +205,20 @@ const updateProfile = async (req, res) => {
 
 		const updates = {};
 
-		// Validate and update name
+		// Update name if provided
 		if (name) {
-			const sanitizedName = sanitizeInput(name);
-			if (!validateName(sanitizedName)) {
-				return res.status(400).json({ error: 'Invalid name format' });
-			}
-			updates.name = sanitizedName;
+			updates.name = name;
 		}
 
-		// Validate and update email
+		// Update email if provided and different from current
 		if (email && email !== req.user.email) {
-			const sanitizedEmail = sanitizeInput(email).toLowerCase();
-			if (!validateEmail(sanitizedEmail)) {
-				return res.status(400).json({ error: 'Invalid email format' });
-			}
-
 			// Check if new email is already taken
-			const existingUser = await User.findOne({ email: sanitizedEmail, _id: { $ne: userId } });
+			const existingUser = await User.findOne({ email, _id: { $ne: userId } });
 			if (existingUser) {
 				return res.status(400).json({ error: 'Email already in use' });
 			}
 
-			updates.email = sanitizedEmail;
+			updates.email = email;
 		}
 
 		// Update user
@@ -281,17 +242,6 @@ const changePassword = async (req, res) => {
 	try {
 		const { currentPassword, newPassword } = req.body;
 		const userId = req.user.id;
-
-		// Validate inputs
-		if (!currentPassword || !newPassword) {
-			return res.status(400).json({ error: 'Current and new passwords are required' });
-		}
-
-		if (!validatePassword(newPassword)) {
-			return res.status(400).json({
-				error: 'New password must be at least 8 characters with uppercase, lowercase, and number',
-			});
-		}
 
 		// Find user with password field
 		const user = await User.findById(userId);
@@ -326,10 +276,6 @@ const deleteAccount = async (req, res) => {
 	try {
 		const { password } = req.body;
 		const userId = req.user.id;
-
-		if (!password) {
-			return res.status(400).json({ error: 'Password is required to delete account' });
-		}
 
 		// Find user and verify password
 		const user = await User.findById(userId);
