@@ -5,6 +5,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { router } from './router';
 import './index.css';
 
+// Initialize locatorjs in development
+if (import.meta.env.DEV) {
+	import('@locator/runtime').then(({ setupLocator }) => {
+		setupLocator();
+	});
+}
+
 const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {

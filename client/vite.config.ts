@@ -4,7 +4,13 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-	plugins: [react()],
+	plugins: [
+		react({
+			babel: {
+				plugins: mode === 'development' ? [['@locator/babel-jsx/dist', { env: 'development' }]] : [],
+			},
+		}),
+	],
 	resolve: {
 		alias: {
 			'@': path.resolve(__dirname, './src'),

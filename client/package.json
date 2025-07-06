@@ -30,6 +30,8 @@
     "vite": "^6.3.5"
   },
   "devDependencies": {
+    "@locator/babel-jsx": "^0.4.4",
+    "@locator/runtime": "^0.4.4",
     "@types/node": "^24.0.3",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",
