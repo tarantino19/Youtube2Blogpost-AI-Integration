@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Mail, Lock, User } from 'lucide-react';
+import { Loader2, Mail, Lock, User, CheckCircle, Zap, Clock, Sparkles } from 'lucide-react';
 
 export function RegisterPage() {
 	const [name, setName] = useState('');
@@ -41,17 +41,26 @@ export function RegisterPage() {
 	};
 
 	return (
-		<div className='min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8'>
+		<div className='min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8'>
 			<div className='max-w-md w-full space-y-8'>
-				<div>
-					<h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900'>Create your account</h2>
-					<p className='mt-2 text-center text-sm text-gray-600'>
-						Or{' '}
-						<Link to='/login' className='font-medium text-red-600 hover:text-red-500'>
-							sign in to existing account
-						</Link>
-					</p>
-				</div>
+					<div className='text-center'>
+						<div className='flex items-center justify-center gap-2 mb-4'>
+							<div className='p-2 bg-red-100 rounded-lg'>
+								<Clock className='h-6 w-6 text-red-600' />
+							</div>
+							<span className='text-sm font-medium text-red-600 bg-red-50 px-3 py-1 rounded-full'>Join 10,000+ Content Creators</span>
+						</div>
+						<h2 className='text-3xl font-extrabold text-gray-900'>Start Creating Amazing Content</h2>
+						<p className='mt-3 text-gray-600'>
+							Join thousands of creators who save 5+ hours per blog post with our AI-powered platform
+						</p>
+						<p className='mt-2 text-center text-sm text-gray-600'>
+							Already have an account?{' '}
+							<Link to='/login' className='font-medium text-red-600 hover:text-red-500'>
+								Sign in here
+							</Link>
+						</p>
+					</div>
 
 				<form className='mt-8 space-y-6' onSubmit={handleSubmit}>
 					{error && (
@@ -154,12 +163,58 @@ export function RegisterPage() {
 						<button
 							type='submit'
 							disabled={isLoading}
-							className='group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed'
+							className='group relative w-full flex justify-center py-4 px-4 border border-transparent text-base font-semibold rounded-lg text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-105 shadow-lg'
 						>
-							{isLoading ? <Loader2 className='h-5 w-5 animate-spin' /> : 'Create account'}
+							{isLoading ? (
+								<>
+									<Loader2 className='h-5 w-5 animate-spin mr-2' />
+									Creating your account...
+								</>
+							) : (
+								<>
+									<Sparkles className='h-5 w-5 mr-2' />
+									Start Creating for Free
+								</>
+							)}
 						</button>
 					</div>
+
+					{/* Trust indicators */}
+					<div className='text-center space-y-3'>
+						<div className='flex items-center justify-center gap-4 text-xs text-gray-500'>
+							<div className='flex items-center gap-1'>
+								<CheckCircle className='h-3 w-3 text-green-500' />
+								<span>No credit card required</span>
+							</div>
+							<div className='flex items-center gap-1'>
+								<CheckCircle className='h-3 w-3 text-green-500' />
+								<span>5 free blog posts</span>
+							</div>
+						</div>
+						<p className='text-xs text-gray-500'>
+							By signing up, you agree to our Terms of Service and Privacy Policy
+						</p>
+					</div>
 				</form>
+
+				{/* Value props at bottom with centered text */}
+				<div className='mt-8 bg-white rounded-xl p-6 shadow-lg'>
+					<h3 className='font-bold text-gray-900 mb-4 text-center'>Why creators love YTtoText:</h3>
+					<div className='space-y-3 text-sm text-center'>
+						<div className='flex items-center justify-center gap-2'>
+							<CheckCircle className='h-4 w-4 text-green-500 flex-shrink-0' />
+							<span>Transform videos to blogs in under 5 minutes</span>
+						</div>
+						<div className='flex items-center justify-center gap-2'>
+							<CheckCircle className='h-4 w-4 text-green-500 flex-shrink-0' />
+							<span>20+ AI models for perfect content every time</span>
+						</div>
+						<div className='flex items-center justify-center gap-2'>
+							<CheckCircle className='h-4 w-4 text-green-500 flex-shrink-0' />
+							<span>Export to WordPress, Medium, and more</span>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	);

@@ -20,7 +20,7 @@ const config = {
 	isProduction: process.env.NODE_ENV === 'production',
 
 	// Server
-	port: parseInt(process.env.PORT || '5000', 10),
+	port: parseInt(process.env.PORT || '4001', 10),
 
 	// Database
 	mongodb: {

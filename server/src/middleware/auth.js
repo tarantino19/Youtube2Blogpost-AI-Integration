@@ -8,7 +8,7 @@ const generateToken = (userId) => {
 		throw new Error('JWT_SECRET must be set to a secure value');
 	}
 	return jwt.sign({ id: userId }, secret, {
-		expiresIn: process.env.JWT_EXPIRE || '7d',
+		expiresIn: process.env.JWT_EXPIRE || '12h',
 	});
 };
 
@@ -17,7 +17,7 @@ const generateRefreshToken = (userId) => {
 	if (!secret || secret === 'your_jwt_secret_key' || secret === 'dev-secret-change-this') {
 		throw new Error('JWT_SECRET must be set to a secure value');
 	}
-	return jwt.sign({ id: userId, type: 'refresh' }, secret, { expiresIn: '30d' });
+	return jwt.sign({ id: userId, type: 'refresh' }, secret, { expiresIn: '14d' });
 };
 
 const verifyToken = (token) => {
@@ -45,7 +45,7 @@ const authenticate = async (req, res, next) => {
 
 		// Additional security check: ensure token is not too old
 		const tokenAge = Date.now() / 1000 - decoded.iat;
-		const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
+		const maxAge = 12 * 60 * 60; // 12 hours in seconds
 		if (tokenAge > maxAge) {
 			throw new Error('Token expired');
 		}

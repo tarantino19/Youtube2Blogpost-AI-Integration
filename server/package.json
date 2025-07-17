@@ -19,7 +19,9 @@
     "deps:install": "bash scripts/install-optional-deps.sh",
     "test:ai": "node scripts/test-ai-providers.js",
     "test:integration": "node scripts/test-integration.js",
-    "security:audit": "node scripts/security-audit.js"
+    "security:audit": "node scripts/security-audit.js",
+    "migrate:db": "node scripts/migrate-database.js",
+    "drop:test-db": "node scripts/migrate-database.js --drop-test"
   },
   "keywords": [],
   "author": "",

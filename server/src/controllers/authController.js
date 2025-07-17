@@ -30,14 +30,14 @@ const register = async (req, res) => {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
 			sameSite: 'strict',
-			maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+			maxAge: 12 * 60 * 60 * 1000, // 12 hours
 		});
 
 		res.cookie('refreshToken', refreshToken, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
 			sameSite: 'strict',
-			maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+			maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
 		});
 
 		res.status(201).json({
@@ -94,14 +94,14 @@ const login = async (req, res) => {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
 			sameSite: 'strict',
-			maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+			maxAge: 12 * 60 * 60 * 1000, // 12 hours
 		});
 
 		res.cookie('refreshToken', refreshToken, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
 			sameSite: 'strict',
-			maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+			maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
 		});
 
 		res.json({
@@ -151,14 +151,14 @@ const refreshToken = async (req, res) => {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
 			sameSite: 'strict',
-			maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+			maxAge: 12 * 60 * 60 * 1000, // 12 hours
 		});
 
 		res.cookie('refreshToken', newRefreshToken, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
 			sameSite: 'strict',
-			maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+			maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
 		});
 
 		res.json({
