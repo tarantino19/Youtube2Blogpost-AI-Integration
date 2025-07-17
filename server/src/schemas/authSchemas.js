@@ -2,14 +2,14 @@ const { z } = require('zod');
 
 // Custom validators using existing regex patterns
 const emailSchema = z.string()
-	.email('Invalid email format')
-	.min(1, 'Email is required')
+	.email('Please enter a valid email address')
+	.min(1, 'Email address is required')
 	.transform(val => val.toLowerCase().trim());
 
 const passwordSchema = z.string()
-	.min(8, 'Password must be at least 8 characters')
+	.min(8, 'Password must be at least 8 characters long')
 	.regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/, 
-		'Password must contain at least one uppercase letter, one lowercase letter, and one number');
+		'Password must include at least one uppercase letter, one lowercase letter, and one number');
 
 const nameSchema = z.string()
 	.min(2, 'Name must be at least 2 characters')
