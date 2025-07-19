@@ -315,6 +315,55 @@ const logout = async (req, res) => {
 	}
 };
 
+const googleCallback = async (req, res) => {
+	try {
+		const user = req.user;
+
+		if (!user) {
+			return res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
+		}
+
+		// Check if account is active
+		if (!user.isActive) {
+			return res.redirect(`${process.env.FRONTEND_URL}/login?error=account_deactivated`);
+		}
+
+		// Check and reset credits if needed
+		if (user.checkAndResetCredits()) {
+			await user.save();
+		}
+
+		// Generate tokens
+		const token = generateToken(user._id);
+		const refreshToken = generateRefreshToken(user._id);
+
+		// Update last login
+		user.updatedAt = Date.now();
+		await user.save();
+
+		// Set httpOnly cookies
+		res.cookie('accessToken', token, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'strict',
+			maxAge: 12 * 60 * 60 * 1000, // 12 hours
+		});
+
+		res.cookie('refreshToken', refreshToken, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'strict',
+			maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
+		});
+
+		// Redirect to dashboard
+		res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+	} catch (error) {
+		console.error('Google OAuth callback error:', error);
+		res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
+	}
+};
+
 module.exports = {
 	register,
 	login,
@@ -324,4 +373,5 @@ module.exports = {
 	updateProfile,
 	changePassword,
 	deleteAccount,
+	googleCallback,
 };

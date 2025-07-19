@@ -4,6 +4,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const config = require('./config/config');
+const passport = require('./config/passport');
 const {
 	securityHeaders,
 	productionSecurity,
@@ -31,6 +32,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(sanitizeInput);
 app.use(morgan(config.isDevelopment ? 'dev' : 'combined'));
+
+// Passport middleware
+app.use(passport.initialize());
 
 // Database connection
 mongoose
