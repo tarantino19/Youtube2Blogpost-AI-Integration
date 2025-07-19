@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const passport = require('passport');
 const authController = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 const { rateLimiter } = require('../middleware/rateLimiter');
@@ -18,6 +19,16 @@ router.post('/register', rateLimiter('register'), validateRequest(registerSchema
 router.post('/login', rateLimiter('login'), validateRequest(loginSchema), authController.login);
 router.post('/refresh', rateLimiter('api'), authController.refreshToken);
 router.post('/logout', authController.logout);
+
+// Google OAuth routes
+router.get('/google', 
+	passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+router.get('/google/callback',
+	passport.authenticate('google', { session: false }),
+	authController.googleCallback
+);
 
 // Protected routes
 router.get('/profile', authenticate, authController.getProfile);
