@@ -1,218 +1,300 @@
-import { useState, useEffect } from 'react';
-import { Share, Twitter, Linkedin, Facebook, Copy, Gift, CheckCircle } from 'lucide-react';
-import { shareService, ShareStatus } from '@/services/shareService';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useRef, useEffect } from "react";
+import {
+  Share,
+  Twitter,
+  Linkedin,
+  Facebook,
+  Copy,
+  Gift,
+  CheckCircle,
+  X,
+  ExternalLink,
+} from "lucide-react";
+import { useShare, generateShareUrls, shareOptions } from "@/hooks/useShare";
 
 interface ShareButtonProps {
   shareText?: string;
   shareUrl?: string;
 }
 
-export function ShareButton({ 
-  shareText = "Check out YTtoText - Convert any YouTube video into a structured blog post using AI!", 
-  shareUrl = window.location.origin 
+export function ShareButton({
+  shareText = "Check out YTtoText - Convert any YouTube video into a structured blog post using AI!",
+  shareUrl = window.location.origin,
 }: ShareButtonProps) {
   const [showDropdown, setShowDropdown] = useState(false);
-  const [shareStatus, setShareStatus] = useState<ShareStatus | null>(null);
-  const [isClaimingReward, setIsClaimingReward] = useState(false);
-  const [rewardMessage, setRewardMessage] = useState<string | null>(null);
-  const [copyMessage, setCopyMessage] = useState<string | null>(null);
-  const { user, refreshUser } = useAuth();
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const {
+    shareStatus,
+    isLoading,
+    isClaimingReward,
+    rewardMessage,
+    copyMessage,
+    hasShared,
+    claimReward,
+    copyLink,
+    trackShare,
+  } = useShare({ shareText, shareUrl });
+
+  // Handle click outside to close dropdown
   useEffect(() => {
-    const fetchShareStatus = async () => {
-      if (!user) return;
-      
-      try {
-        const status = await shareService.getShareStatus();
-        setShareStatus(status);
-      } catch (error) {
-        console.error('Error fetching share status:', error);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
       }
     };
 
-    fetchShareStatus();
-  }, [user]);
-
-  const handleClaimReward = async () => {
-    if (!shareStatus?.canEarnReward || isClaimingReward) return;
-
-    setIsClaimingReward(true);
-    try {
-      const response = await shareService.claimShareReward();
-      setRewardMessage(response.message);
-      
-      // Refresh user data to update credits
-      await refreshUser();
-      
-      // Refresh share status
-      const newStatus = await shareService.getShareStatus();
-      setShareStatus(newStatus);
-      
-      setTimeout(() => setRewardMessage(null), 5000);
-    } catch (error: any) {
-      console.error('Error claiming reward:', error);
-      setRewardMessage(error.response?.data?.message || 'Failed to claim reward');
-      setTimeout(() => setRewardMessage(null), 5000);
-    } finally {
-      setIsClaimingReward(false);
+    if (showDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
-  };
+  }, [showDropdown]);
 
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopyMessage('Link copied to clipboard!');
-      setTimeout(() => setCopyMessage(null), 2000);
-    } catch (error) {
-      console.error('Error copying link:', error);
-      setCopyMessage('Failed to copy link');
-      setTimeout(() => setCopyMessage(null), 2000);
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!showDropdown) return;
+
+      switch (event.key) {
+        case "Escape":
+          setShowDropdown(false);
+          buttonRef.current?.focus();
+          break;
+        case "Tab":
+          // Let natural tab behavior work within dropdown
+          break;
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
     }
+  }, [showDropdown]);
+
+  const handleSocialShare = (platform: string, url: string) => {
+    trackShare(platform.toLowerCase());
+    window.open(url, "_blank", "noopener,noreferrer,width=600,height=400");
   };
 
-  const shareLinks = {
-    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
-  };
+  const shareUrls = generateShareUrls(shareText, shareUrl);
+  const canShowReward = shareStatus && !isLoading;
+  const showRewardButton =
+    canShowReward && (hasShared || !shareStatus.canEarnReward);
 
   return (
     <div className="relative">
       <button
+        ref={buttonRef}
         onClick={() => setShowDropdown(!showDropdown)}
-        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+        className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        aria-haspopup="true"
+        aria-expanded={showDropdown}
+        aria-describedby="share-dropdown"
       >
         <Share className="h-4 w-4 mr-2" />
-        Share & Earn
-        {shareStatus?.canEarnReward && (
-          <Gift className="h-4 w-4 ml-2 text-yellow-300" />
+        <span>Share</span>
+        {canShowReward && shareStatus.canEarnReward && (
+          <div className="flex items-center ml-2">
+            <Gift className="h-4 w-4 text-yellow-300" />
+            <span className="ml-1 text-sm font-medium">
+              +{shareStatus.rewardAmount}
+            </span>
+          </div>
         )}
       </button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-          <div className="p-4">
-            <div className="space-y-4">
-              {/* Reward Section */}
-              {user && shareStatus && (
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg border">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center">
-                      <Gift className="h-5 w-5 text-blue-600 mr-2" />
-                      <span className="font-medium text-gray-900">Share Reward</span>
+        <div
+          ref={dropdownRef}
+          id="share-dropdown"
+          className="absolute right-0 mt-3 w-72 sm:w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 transform transition-all duration-200 opacity-100 scale-100"
+          role="dialog"
+          aria-label="Share options"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <h3 className="font-semibold text-gray-900">Share YTtoText</h3>
+            <button
+              onClick={() => setShowDropdown(false)}
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+              aria-label="Close share menu"
+            >
+              <X className="h-4 w-4 text-gray-500" />
+            </button>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            )}
+
+            {/* Reward Section */}
+            {canShowReward && (
+              <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4 rounded-lg border border-blue-100">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                      <Gift className="h-5 w-5 text-blue-600" />
                     </div>
-                    <span className="text-sm text-blue-600 font-medium">
-                      +{shareStatus.rewardAmount} credits
-                    </span>
-                  </div>
-                  
-                  {shareStatus.canEarnReward ? (
-                    <div className="space-y-2">
+                    <div>
+                      <h4 className="font-medium text-gray-900">
+                        Earn Credits
+                      </h4>
                       <p className="text-sm text-gray-600">
-                        Share our app and earn {shareStatus.rewardAmount} free credits!
-                      </p>
-                      <button
-                        onClick={handleClaimReward}
-                        disabled={isClaimingReward}
-                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {isClaimingReward ? 'Claiming...' : 'Claim Reward'}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-gray-600">
-                      <p className="mb-1">
-                        You've already earned your share reward this month!
-                      </p>
-                      <p className="text-xs">
-                        Next reward available in {shareStatus.daysUntilNextReward} days
+                        Share and get rewarded
                       </p>
                     </div>
-                  )}
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-bold text-blue-600">
+                      +{shareStatus.rewardAmount}
+                    </span>
+                    <p className="text-xs text-gray-500">credits</p>
+                  </div>
                 </div>
-              )}
 
-              {/* Success/Error Messages */}
-              {rewardMessage && (
-                <div className={`p-3 rounded-lg ${
-                  rewardMessage.includes('successfully') 
-                    ? 'bg-green-50 text-green-700 border border-green-200' 
-                    : 'bg-red-50 text-red-700 border border-red-200'
-                }`}>
-                  <div className="flex items-center">
-                    {rewardMessage.includes('successfully') && (
-                      <CheckCircle className="h-4 w-4 mr-2" />
+                {shareStatus.canEarnReward ? (
+                  <div className="space-y-3">
+                    {!hasShared ? (
+                      <p className="text-sm text-gray-600">
+                        Share our app on social media or copy the link, then
+                        claim your reward!
+                      </p>
+                    ) : (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="flex items-center text-green-700">
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          <span className="text-sm font-medium">
+                            Ready to claim your reward!
+                          </span>
+                        </div>
+                      </div>
                     )}
-                    <span className="text-sm">{rewardMessage}</span>
-                  </div>
-                </div>
-              )}
 
-              {copyMessage && (
-                <div className="p-3 rounded-lg bg-green-50 text-green-700 border border-green-200">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{copyMessage}</span>
+                    {showRewardButton && (
+                      <button
+                        onClick={claimReward}
+                        disabled={isClaimingReward}
+                        className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-2.5 px-4 rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                      >
+                        {isClaimingReward ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Claiming...
+                          </div>
+                        ) : (
+                          "Claim Reward"
+                        )}
+                      </button>
+                    )}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-600 mb-1">
+                      ✨ You've already earned your monthly share reward!
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Next reward available in {shareStatus.daysUntilNextReward}{" "}
+                      days
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
-              {/* Share Options */}
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-900">Share on social media:</h4>
-                
-                <div className="space-y-2">
-                  <a
-                    href={shareLinks.twitter}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <Twitter className="h-5 w-5 text-blue-500 mr-3" />
-                    <span className="text-gray-700">Share on Twitter</span>
-                  </a>
-                  
-                  <a
-                    href={shareLinks.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <Linkedin className="h-5 w-5 text-blue-700 mr-3" />
-                    <span className="text-gray-700">Share on LinkedIn</span>
-                  </a>
-                  
-                  <a
-                    href={shareLinks.facebook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <Facebook className="h-5 w-5 text-blue-600 mr-3" />
-                    <span className="text-gray-700">Share on Facebook</span>
-                  </a>
-                  
-                  <button
-                    onClick={handleCopyLink}
-                    className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <Copy className="h-5 w-5 text-gray-500 mr-3" />
-                    <span className="text-gray-700">Copy Link</span>
-                  </button>
+            {/* Status Messages */}
+            {rewardMessage && (
+              <div
+                className={`p-3 rounded-lg border ${
+                  rewardMessage.includes("successfully")
+                    ? "bg-green-50 text-green-700 border-green-200"
+                    : "bg-red-50 text-red-700 border-red-200"
+                }`}
+              >
+                <div className="flex items-center">
+                  {rewardMessage.includes("successfully") && (
+                    <CheckCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+                  )}
+                  <span className="text-sm">{rewardMessage}</span>
                 </div>
               </div>
+            )}
+
+            {copyMessage && (
+              <div className="bg-green-50 text-green-700 border border-green-200 p-3 rounded-lg">
+                <div className="flex items-center">
+                  <CheckCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="text-sm">{copyMessage}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Share Options */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-900 text-sm">
+                Choose how to share:
+              </h4>
+
+              <div className="space-y-2">
+                {shareOptions.map((option) => {
+                  const Icon =
+                    option.id === "twitter"
+                      ? Twitter
+                      : option.id === "linkedin"
+                        ? Linkedin
+                        : Facebook;
+                  const url =
+                    option.id === "twitter"
+                      ? shareUrls.twitter
+                      : option.id === "linkedin"
+                        ? shareUrls.linkedin
+                        : shareUrls.facebook;
+
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => handleSocialShare(option.name, url)}
+                      className={`flex items-center w-full p-3 border border-gray-200 rounded-lg transition-all duration-200 ${option.hoverColor} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1`}
+                    >
+                      <Icon className={`h-5 w-5 mr-3 ${option.color}`} />
+                      <span className="text-gray-700 font-medium">
+                        Share on {option.name}
+                      </span>
+                      <ExternalLink className="h-4 w-4 ml-auto text-gray-400" />
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={copyLink}
+                  className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                >
+                  <Copy className="h-5 w-5 text-gray-500 mr-3" />
+                  <span className="text-gray-700 font-medium">Copy Link</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-3 border-t border-gray-100">
+              <p className="text-xs text-gray-500 text-center">
+                Help others discover YTtoText and earn rewards! 🎉
+              </p>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Backdrop */}
-      {showDropdown && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowDropdown(false)}
-        />
       )}
     </div>
   );
