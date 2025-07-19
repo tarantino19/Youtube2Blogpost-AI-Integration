@@ -96,9 +96,12 @@ export function DashboardPage() {
 					>
 						View All Posts
 					</Link>
-					<button className='flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50'>
+					<Link
+						to='/upgrade'
+						className='flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50'
+					>
 						Upgrade Plan
-					</button>
+					</Link>
 				</div>
 			</div>
 

@@ -11,6 +11,7 @@ import { BlogPostPage } from './pages/BlogPostPage';
 import { BlogPostsPage } from './pages/BlogPostsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { StatsPage } from './pages/StatsPage';
+import { UpgradePlanPage } from './pages/UpgradePlanPage';
 import { ErrorPage } from './pages/ErrorPage';
 
 const RootWithAuth = () => (
@@ -51,6 +52,10 @@ export const router = createBrowserRouter([
 					{
 						path: 'stats',
 						element: <StatsPage />,
+					},
+					{
+						path: 'upgrade',
+						element: <UpgradePlanPage />,
 					},
 					{
 						path: 'process',
