@@ -11,8 +11,8 @@ const passwordSchema = z
   .string()
   .min(8, "Password must be at least 8 characters long")
   .regex(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/,
-    "Password must include at least one uppercase letter, one lowercase letter, and one number",
+    /^(?=.*[a-z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/,
+    "Password must include at least one lowercase letter, one number, and a minimum of 8 characters long",
   );
 
 const nameSchema = z
