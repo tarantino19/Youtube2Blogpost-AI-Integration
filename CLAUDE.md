@@ -50,6 +50,8 @@ Please try to avoid using classes when providing js or ts code unless necessary
 
 I prefer that you use async await over .then or promises
 
+**ALWAYS include line numbers when referencing code:** When showing code examples or referencing existing code from the codebase, always include the file path and line number in the format `file_path:line_number` so I can easily navigate to the source code location.
+
 ## Architecture Overview
 
 ### Frontend (`client/`)
