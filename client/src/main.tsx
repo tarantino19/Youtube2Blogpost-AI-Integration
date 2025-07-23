@@ -7,11 +7,7 @@ import './index.css';
 
 // Initialize locatorjs in development
 if (import.meta.env.DEV) {
-	import('@locator/runtime').then((locator) => {
-		if (locator.setupLocator) {
-			locator.setupLocator();
-		}
-	}).catch(() => {
+	import('@locator/runtime').catch(() => {
 		// Silently fail if locator is not available
 	});
 }
