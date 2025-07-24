@@ -148,7 +148,7 @@ export function UpgradePlanPage() {
 			annualPrice: 'Custom',
 			credits: 'Unlimited',
 			description: 'For enterprises with massive content needs',
-			badge: 'Custom',
+			badge: 'Custom Solutions',
 			features: [
 				'Unlimited blog posts',
 				'Custom AI model training',
@@ -241,11 +241,13 @@ export function UpgradePlanPage() {
 	];
 
 	const getCurrentPrice = (plan: typeof plans[0]) => {
-		if (typeof plan.monthlyPrice === 'number') {
-			return billingCycle === 'monthly' ? plan.monthlyPrice : Math.round(plan.annualPrice / 12);
+		if (typeof plan.monthlyPrice === 'number' && typeof plan.annualPrice === 'number') {
+			return billingCycle === 'monthly'
+				? plan.monthlyPrice
+				: Math.round(plan.annualPrice / 12);
 		}
 		return plan.monthlyPrice;
-	};
+};
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -628,10 +630,8 @@ export function UpgradePlanPage() {
 												? 'bg-red-500 text-white'
 												: plan.id === 'business'
 												? 'bg-green-500 text-white'
-												: plan.id === 'enterprise'
-												? 'bg-blue-500 text-white'
 												: 'bg-blue-500 text-white'
-										}`} style={plan.id === 'enterprise' ? {position: 'static', transform: 'none', margin: 0} : {}}>
+										}`}>
 											{plan.badge}
 										</span>
 									</div>
