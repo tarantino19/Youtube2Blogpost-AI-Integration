@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const BlogPost = require('../models/BlogPost');
 const aiService = require('../services/unifiedAIService');
 const puppeteer = require('puppeteer');
+const activityLogService = require('../services/activityLogService');
 const {
 	validateObjectId,
 	validatePaginationParams,
@@ -139,6 +140,23 @@ const updatePost = async (req, res) => {
 
 		await post.save();
 
+		// Log post update activity
+		await activityLogService.logActivity({
+			userId: req.user.id,
+			username: req.user.email,
+			action: 'UPDATE_POST',
+			description: `User updated post: ${post.generatedContent.title}`,
+			details: {
+				updatedFields: Object.keys({ title, content, summary, tags, metaDescription, isPublished }).filter(k => req.body[k] !== undefined),
+				postId: post._id
+			},
+			ipAddress: req.ip,
+			userAgent: req.get('user-agent'),
+			resourceId: post._id,
+			resourceModel: 'BlogPost',
+			status: 'SUCCESS'
+		});
+
 		res.json({
 			message: 'Post updated successfully',
 			post,
@@ -163,6 +181,23 @@ const deletePost = async (req, res) => {
 		if (!post) {
 			return res.status(404).json({ error: 'Post not found' });
 		}
+
+		// Log post deletion activity
+		await activityLogService.logActivity({
+			userId: req.user.id,
+			username: req.user.email,
+			action: 'DELETE_POST',
+			description: `User deleted post: ${post.generatedContent.title}`,
+			details: {
+				postId: post._id,
+				title: post.generatedContent.title
+			},
+			ipAddress: req.ip,
+			userAgent: req.get('user-agent'),
+			resourceId: post._id,
+			resourceModel: 'BlogPost',
+			status: 'SUCCESS'
+		});
 
 		res.json({ message: 'Post deleted successfully' });
 	} catch (error) {
@@ -216,9 +251,9 @@ const exportPost = async (req, res) => {
 		if (format === 'markdown') {
 			const markdownContent = `# ${exportData.title}
 
-**Video:** [${exportData.videoTitle}](${exportData.videoUrl})  
-**Created:** ${new Date(exportData.createdAt).toLocaleDateString()}  
-**Reading Time:** ${exportData.readingTime} minutes  
+**Video:** [${exportData.videoTitle}](${exportData.videoUrl})
+**Created:** ${new Date(exportData.createdAt).toLocaleDateString()}
+**Reading Time:** ${exportData.readingTime} minutes
 **Word Count:** ${exportData.wordCount}
 
 ${exportData.summary ? `## Summary\n\n${exportData.summary}\n\n` : ''}
@@ -280,9 +315,9 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
     <title>${exportData.title}</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
+
         * { box-sizing: border-box; }
-        
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
@@ -292,7 +327,7 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
             padding: 40px 20px;
             font-size: 14px;
         }
-        
+
         h1 {
             font-size: 28px;
             font-weight: 700;
@@ -301,7 +336,7 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
             border-bottom: 3px solid #ef4444;
             padding-bottom: 10px;
         }
-        
+
         h2 {
             font-size: 22px;
             font-weight: 600;
@@ -309,7 +344,7 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
             margin-bottom: 15px;
             color: #111;
         }
-        
+
         h3 {
             font-size: 18px;
             font-weight: 600;
@@ -317,12 +352,12 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
             margin-bottom: 12px;
             color: #111;
         }
-        
+
         p {
             margin-bottom: 16px;
             text-align: justify;
         }
-        
+
         .meta {
             background: #f8f9fa;
             padding: 20px;
@@ -330,23 +365,23 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
             margin-bottom: 30px;
             border-left: 4px solid #ef4444;
         }
-        
+
         .meta h3 {
             margin-top: 0;
             color: #ef4444;
             font-size: 16px;
         }
-        
+
         .meta p {
             margin-bottom: 8px;
             font-size: 13px;
         }
-        
+
         .meta a {
             color: #ef4444;
             text-decoration: none;
         }
-        
+
         .summary {
             background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
             padding: 20px;
@@ -354,23 +389,23 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
             margin-bottom: 30px;
             border-left: 4px solid #2196f3;
         }
-        
+
         .summary h3 {
             margin-top: 0;
             color: #1976d2;
             font-size: 16px;
         }
-        
+
         .content {
             margin-bottom: 30px;
         }
-        
+
         .tags {
             margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid #e0e0e0;
         }
-        
+
         .tag {
             display: inline-block;
             background: #ef4444;
@@ -381,16 +416,16 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
             font-size: 12px;
             font-weight: 500;
         }
-        
+
         ul, ol {
             margin-bottom: 16px;
             padding-left: 20px;
         }
-        
+
         li {
             margin-bottom: 8px;
         }
-        
+
         blockquote {
             border-left: 4px solid #ef4444;
             margin: 20px 0;
@@ -398,7 +433,7 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
             background: #f9f9f9;
             font-style: italic;
         }
-        
+
         code {
             background: #f5f5f5;
             padding: 2px 6px;
@@ -406,7 +441,7 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
             font-family: 'Monaco', 'Consolas', monospace;
             font-size: 12px;
         }
-        
+
         .footer {
             margin-top: 40px;
             padding-top: 20px;
@@ -419,7 +454,7 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
 </head>
 <body>
     <h1>${exportData.title}</h1>
-    
+
     <div class="meta">
         <h3>Video Information</h3>
         <p><strong>Original Video:</strong> <a href="${exportData.videoUrl}">${exportData.videoTitle}</a></p>
@@ -427,7 +462,7 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
         <p><strong>Reading Time:</strong> ${exportData.readingTime} minutes</p>
         <p><strong>Word Count:</strong> ${exportData.wordCount.toLocaleString()} words</p>
     </div>
-    
+
     ${
 					exportData.summary
 						? `
@@ -438,11 +473,11 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
     `
 						: ''
 				}
-    
+
     <div class="content">
         ${exportData.content.replace(/\n/g, '<br>')}
     </div>
-    
+
     ${
 					exportData.tags.length > 0
 						? `
@@ -453,7 +488,7 @@ ${exportData.tags.length > 0 ? `\n**Tags:** ${exportData.tags.join(', ')}` : ''}
     `
 						: ''
 				}
-    
+
     <div class="footer">
         <p>Generated from YouTube video on ${new Date().toLocaleDateString()}</p>
     </div>
@@ -523,6 +558,24 @@ const improvePost = async (req, res) => {
 		post.wordCount = improvedContent.split(/\s+/).length;
 		post.readingTime = Math.ceil(post.wordCount / 200);
 		await post.save();
+
+		// Log post improvement activity
+		await activityLogService.logActivity({
+			userId: req.user.id,
+			username: req.user.email,
+			action: 'IMPROVE_POST',
+			description: `User improved post: ${post.generatedContent.title}`,
+			details: {
+				postId: post._id,
+				instructions,
+				modelUsed: modelId
+			},
+			ipAddress: req.ip,
+			userAgent: req.get('user-agent'),
+			resourceId: post._id,
+			resourceModel: 'BlogPost',
+			status: 'SUCCESS'
+		});
 
 		res.json({
 			message: 'Post improved successfully',

@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { generateToken, generateRefreshToken } = require('../middleware/auth');
+const activityLogService = require('../services/activityLogService');
 
 const register = async (req, res) => {
 	try {
@@ -38,6 +39,19 @@ const register = async (req, res) => {
 			secure: process.env.NODE_ENV === 'production',
 			sameSite: 'strict',
 			maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
+		});
+
+		// Log registration activity
+		await activityLogService.logActivity({
+			userId: user._id,
+			username: user.email,
+			action: 'REGISTER',
+			description: `User ${user.email} registered`,
+			ipAddress: req.ip,
+			userAgent: req.get('user-agent'),
+			resourceId: user._id,
+			resourceModel: 'User',
+			status: 'SUCCESS'
 		});
 
 		res.status(201).json({
@@ -102,6 +116,19 @@ const login = async (req, res) => {
 			secure: process.env.NODE_ENV === 'production',
 			sameSite: 'strict',
 			maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
+		});
+
+		// Log login activity
+		await activityLogService.logActivity({
+			userId: user._id,
+			username: user.email,
+			action: 'LOGIN',
+			description: `User ${user.email} logged in`,
+			ipAddress: req.ip,
+			userAgent: req.get('user-agent'),
+			resourceId: user._id,
+			resourceModel: 'User',
+			status: 'SUCCESS'
 		});
 
 		res.json({
@@ -228,6 +255,20 @@ const updateProfile = async (req, res) => {
 			{ new: true, runValidators: true }
 		).select('-password');
 
+		// Log profile update activity
+		await activityLogService.logActivity({
+			userId: user._id,
+			username: user.email,
+			action: 'UPDATE_PROFILE',
+			description: `User ${user.email} updated profile`,
+			details: updates,
+			ipAddress: req.ip,
+			userAgent: req.get('user-agent'),
+			resourceId: user._id,
+			resourceModel: 'User',
+			status: 'SUCCESS'
+		});
+
 		res.json({
 			message: 'Profile updated successfully',
 			user,
@@ -262,6 +303,19 @@ const changePassword = async (req, res) => {
 		// Generate new token
 		const token = generateToken(user._id);
 
+		// Log password change activity
+		await activityLogService.logActivity({
+			userId: user._id,
+			username: user.email,
+			action: 'CHANGE_PASSWORD',
+			description: `User ${user.email} changed password`,
+			ipAddress: req.ip,
+			userAgent: req.get('user-agent'),
+			resourceId: user._id,
+			resourceModel: 'User',
+			status: 'SUCCESS'
+		});
+
 		res.json({
 			message: 'Password changed successfully',
 			token,
@@ -293,6 +347,19 @@ const deleteAccount = async (req, res) => {
 		user.updatedAt = Date.now();
 		await user.save();
 
+		// Log account deletion activity
+		await activityLogService.logActivity({
+			userId: user._id,
+			username: user.email,
+			action: 'DELETE_ACCOUNT',
+			description: `User ${user.email} deactivated account`,
+			ipAddress: req.ip,
+			userAgent: req.get('user-agent'),
+			resourceId: user._id,
+			resourceModel: 'User',
+			status: 'SUCCESS'
+		});
+
 		res.json({
 			message: 'Account deactivated successfully. Contact support within 30 days to reactivate.',
 		});
@@ -307,6 +374,21 @@ const logout = async (req, res) => {
 		// Clear cookies
 		res.clearCookie('accessToken');
 		res.clearCookie('refreshToken');
+
+		// Log logout activity if we have user info in the request
+		if (req.user) {
+			await activityLogService.logActivity({
+				userId: req.user.id,
+				username: req.user.email,
+				action: 'LOGOUT',
+				description: `User ${req.user.email} logged out`,
+				ipAddress: req.ip,
+				userAgent: req.get('user-agent'),
+				resourceId: req.user.id,
+				resourceModel: 'User',
+				status: 'SUCCESS'
+			});
+		}
 
 		res.json({ message: 'Logged out successfully' });
 	} catch (error) {
