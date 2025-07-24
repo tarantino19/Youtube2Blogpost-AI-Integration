@@ -142,7 +142,7 @@ export function UpgradePlanPage() {
 			annualPrice: 'Custom',
 			credits: 'Unlimited',
 			description: 'For enterprises with massive content needs',
-			badge: 'Custom Solutions',
+			badge: 'Custom',
 			features: [
 				'Unlimited blog posts',
 				'Custom AI model training',
