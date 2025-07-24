@@ -1,21 +1,16 @@
 import { useAuth } from '@/contexts/AuthContext';
 import {
 	Check,
-	X,
 	Star,
-	TrendingUp,
 	Clock,
 	Zap,
 	Shield,
 	Users,
-	Play,
-	ArrowRight,
 	Sparkles,
 	Target,
 	BarChart3,
 	Globe,
 	ChevronDown,
-	Eye,
 	DollarSign,
 	Timer
 } from 'lucide-react';
@@ -23,7 +18,6 @@ import { useState, useEffect } from 'react';
 
 export function UpgradePlanPage() {
 	const { user } = useAuth();
-	const [selectedPlan, setSelectedPlan] = useState('creator');
 	const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 	const [showROICalculator, setShowROICalculator] = useState(false);
 	const [showComparison, setShowComparison] = useState(false);
