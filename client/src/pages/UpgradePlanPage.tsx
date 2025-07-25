@@ -288,7 +288,19 @@ export function UpgradePlanPage() {
 								🚀 Start Your 7-Day Free Trial
 							</button>
 							<button
-								onClick={() => setShowROICalculator(!showROICalculator)}
+								onClick={() => {
+									setShowROICalculator(true);
+									// Small delay to ensure DOM is updated before scrolling
+									setTimeout(() => {
+										const element = document.getElementById('revenue-calculator');
+										if (element) {
+											element.scrollIntoView({
+												behavior: 'smooth',
+												block: 'start'
+											});
+										}
+									}, 100);
+								}}
 								className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-red-600 transition-all"
 							>
 								📊 Calculate Your ROI
@@ -382,7 +394,7 @@ export function UpgradePlanPage() {
 
 			{/* ROI Calculator */}
 			{showROICalculator && (
-				<div className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16">
+				<div id="revenue-calculator" className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16">
 					<div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 						<div className="text-center mb-8">
 							<h2 className="text-3xl font-bold text-gray-900 mb-4">Calculate Your Revenue Potential</h2>

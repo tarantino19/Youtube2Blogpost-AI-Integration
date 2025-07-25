@@ -62,10 +62,14 @@ app.use('/api/videos', require('./routes/videos'));
 app.use('/api/posts', require('./routes/posts'));
 app.use('/api/shares', require('./routes/shares'));
 
-// Health check endpoint
+// Public endpoints (no authentication required)
 app.get('/api/health', (req, res) => {
 	res.json({ status: 'OK', message: 'Server is running' });
 });
+
+// Public statistics endpoint for landing page
+const { getPublicStats } = require('./controllers/postController');
+app.get('/api/public/stats', getPublicStats);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

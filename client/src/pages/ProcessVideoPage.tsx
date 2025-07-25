@@ -90,31 +90,29 @@ export function ProcessVideoPage() {
 	}
 
 	return (
-		<div className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
-			<div className='bg-white rounded-lg shadow-lg p-8'>
-				<div className='flex justify-between items-start mb-8'>
-					<div className='text-center flex-1'>
-						<Youtube className='h-16 w-16 text-red-600 mx-auto mb-4' />
-						<h1 className='text-3xl font-bold text-gray-900 mb-2'>Process YouTube Video</h1>
-						<p className='text-gray-600'>Enter a YouTube URL to convert it into a blog post</p>
-					</div>
-					<div className='flex-shrink-0'>
+		<div className='max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
+			<div className='bg-white rounded-xl shadow-xl p-8 lg:p-12'>
+				<div className='text-center mb-10'>
+					<Youtube className='h-20 w-20 text-red-600 mx-auto mb-6' />
+					<h1 className='text-3xl sm:text-4xl font-bold text-gray-900 mb-3'>Process YouTube Video</h1>
+					<p className='text-lg text-gray-600 max-w-2xl mx-auto'>Enter a YouTube URL to convert it into a professionally formatted, SEO-optimized blog post</p>
+					<div className='flex justify-center mt-6'>
 						<ShareButton />
 					</div>
 				</div>
 
-				<form onSubmit={handleSubmit} className='space-y-6'>
+				<form onSubmit={handleSubmit} className='space-y-8'>
 					{error && (
-						<div className='bg-red-50 border border-red-200 rounded-md p-4'>
-							<div className='flex'>
-								<AlertCircle className='h-5 w-5 text-red-400 mr-2' />
-								<p className='text-sm text-red-800'>{error}</p>
+						<div className='bg-red-50 border-l-4 border-red-400 rounded-lg p-4'>
+							<div className='flex items-center'>
+								<AlertCircle className='h-5 w-5 text-red-400 mr-3 flex-shrink-0' />
+								<p className='text-sm text-red-800 font-medium'>{error}</p>
 							</div>
 						</div>
 					)}
 
-					<div>
-						<label htmlFor='video-url' className='block text-sm font-medium text-gray-700 mb-2'>
+					<div className='bg-gray-50 rounded-lg p-6'>
+						<label htmlFor='video-url' className='block text-base font-semibold text-gray-800 mb-3'>
 							YouTube Video URL
 						</label>
 						<input
@@ -123,29 +121,30 @@ export function ProcessVideoPage() {
 							value={videoUrl}
 							onChange={(e) => setVideoUrl(e.target.value)}
 							placeholder='https://www.youtube.com/watch?v=...'
-							className='w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500'
+							className='w-full px-4 py-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-lg transition-all duration-200'
 							required
 							disabled={processMutation.isPending}
 						/>
-						<p className='mt-2 text-sm text-gray-500'>
-							Paste any YouTube video URL. We'll extract the transcript and generate a blog post.
+						<p className='mt-3 text-sm text-gray-600 leading-relaxed'>
+							Paste any YouTube video URL. We'll extract the transcript and generate a professionally formatted blog post.
 						</p>
 					</div>
 
-					<div>
-						<label htmlFor='model-select' className='block text-sm font-medium text-gray-700 mb-2'>
+					<div className='bg-gray-50 rounded-lg p-6'>
+						<label htmlFor='model-select' className='block text-base font-semibold text-gray-800 mb-3'>
 							Select AI Model
 						</label>
 						{isLoadingModels ? (
-							<div className='w-full px-4 py-3 border border-gray-300 rounded-md bg-gray-50'>
-								<Loader2 className='h-5 w-5 animate-spin mx-auto' />
+							<div className='w-full px-4 py-4 border-2 border-gray-200 rounded-lg bg-white flex items-center justify-center'>
+								<Loader2 className='h-5 w-5 animate-spin text-red-500' />
+								<span className='ml-2 text-gray-600'>Loading models...</span>
 							</div>
 						) : modelsByProvider && Object.keys(modelsByProvider).length > 0 ? (
 							<select
 								id='model-select'
 								value={selectedModel}
 								onChange={(e) => setSelectedModel(e.target.value)}
-								className='w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500'
+								className='w-full px-4 py-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-lg transition-all duration-200'
 								disabled={processMutation.isPending}
 							>
 								{Object.entries(modelsByProvider).map(([provider, models]) => (
@@ -159,24 +158,24 @@ export function ProcessVideoPage() {
 								))}
 							</select>
 						) : (
-							<div className='w-full px-4 py-3 border border-gray-300 rounded-md bg-yellow-50'>
-								<p className='text-sm text-yellow-800'>No AI models available. Please configure API keys.</p>
+							<div className='w-full px-4 py-4 border-2 border-yellow-200 rounded-lg bg-yellow-50'>
+								<p className='text-sm font-medium text-yellow-800'>No AI models available. Please configure API keys.</p>
 							</div>
 						)}
-						<p className='mt-2 text-sm text-gray-500'>
+						<p className='mt-3 text-sm text-gray-600 leading-relaxed'>
 							Choose the AI model to generate your blog post. Different models have different capabilities and costs.
 						</p>
 					</div>
 
-					<div className='flex justify-center'>
+					<div className='flex justify-center pt-4'>
 						<button
 							type='submit'
 							disabled={processMutation.isPending || !videoUrl || !selectedModel || isLoadingModels}
-							className='inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed'
+							className='inline-flex items-center px-8 py-4 border border-transparent text-lg font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none'
 						>
 							{processMutation.isPending ? (
 								<>
-									<Loader2 className='h-5 w-5 mr-2 animate-spin' />
+									<Loader2 className='h-5 w-5 mr-3 animate-spin' />
 									Starting Processing...
 								</>
 							) : (
@@ -186,26 +185,37 @@ export function ProcessVideoPage() {
 					</div>
 				</form>
 
-				<div className='mt-8 border-t pt-8'>
-					<h2 className='text-lg font-semibold text-gray-900 mb-4'>Tips for Best Results</h2>
-					<ul className='space-y-2 text-sm text-gray-600'>
-						<li className='flex items-start'>
-							<span className='text-red-600 mr-2'>•</span>
-							Choose videos with clear audio and good captions for better transcription
-						</li>
-						<li className='flex items-start'>
-							<span className='text-red-600 mr-2'>•</span>
-							Educational and tutorial videos work best for blog post conversion
-						</li>
-						<li className='flex items-start'>
-							<span className='text-red-600 mr-2'>•</span>
-							Longer videos (10-30 minutes) typically produce more comprehensive posts
-						</li>
-						<li className='flex items-start'>
-							<span className='text-red-600 mr-2'>•</span>
-							You can edit the generated content after processing
-						</li>
-					</ul>
+				<div className='mt-10 bg-blue-50 rounded-lg p-6'>
+					<h2 className='text-xl font-semibold text-gray-900 mb-5 flex items-center'>
+						<div className='w-2 h-2 bg-blue-500 rounded-full mr-3'></div>
+						Tips for Best Results
+					</h2>
+					<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+						<div className='flex items-start space-x-3'>
+							<div className='w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5'>
+								<div className='w-2 h-2 bg-blue-500 rounded-full'></div>
+							</div>
+							<p className='text-sm text-gray-700 leading-relaxed'>Choose videos with clear audio and good captions for better transcription</p>
+						</div>
+						<div className='flex items-start space-x-3'>
+							<div className='w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5'>
+								<div className='w-2 h-2 bg-blue-500 rounded-full'></div>
+							</div>
+							<p className='text-sm text-gray-700 leading-relaxed'>Educational and tutorial videos work best for blog post conversion</p>
+						</div>
+						<div className='flex items-start space-x-3'>
+							<div className='w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5'>
+								<div className='w-2 h-2 bg-blue-500 rounded-full'></div>
+							</div>
+							<p className='text-sm text-gray-700 leading-relaxed'>Longer videos (10-30 minutes) typically produce more comprehensive posts</p>
+						</div>
+						<div className='flex items-start space-x-3'>
+							<div className='w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5'>
+								<div className='w-2 h-2 bg-blue-500 rounded-full'></div>
+							</div>
+							<p className='text-sm text-gray-700 leading-relaxed'>You can edit the generated content after processing</p>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { RootLayout } from './components/layouts/RootLayout';
 import { ProtectedLayout } from './components/layouts/ProtectedLayout';
 import { HomePage } from './pages/HomePage';
+import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -37,6 +38,10 @@ export const router = createBrowserRouter([
 			{
 				path: 'register',
 				element: <RegisterPage />,
+			},
+			{
+				path: 'go',
+				element: <LandingPage />,
 			},
 			{
 				element: <ProtectedLayout />,

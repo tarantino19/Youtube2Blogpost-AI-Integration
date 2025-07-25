@@ -587,6 +587,70 @@ const improvePost = async (req, res) => {
 	}
 };
 
+const getPublicStats = async (req, res) => {
+	try {
+		const User = require('../models/User');
+
+		// Get user statistics
+		const userCount = await User.countDocuments({ isActive: true });
+
+		// Get blog post statistics
+		const postStats = await BlogPost.aggregate([
+			{
+				$group: {
+					_id: null,
+					totalVideosProcessed: { $sum: 1 },
+					completedVideos: {
+						$sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
+					},
+					totalWords: { $sum: '$wordCount' },
+					totalReadingTime: { $sum: '$readingTime' },
+					totalVideoDuration: { $sum: '$videoDuration' },
+				},
+			},
+		]);
+
+		// Get popular AI models
+		const aiModelStats = await BlogPost.aggregate([
+			{ $match: { status: 'completed', aiModel: { $exists: true } } },
+			{
+				$group: {
+					_id: '$aiModel',
+					count: { $sum: 1 },
+				},
+			},
+			{ $sort: { count: -1 } },
+			{ $limit: 5 },
+		]);
+
+		const stats = postStats[0] || {
+			totalVideosProcessed: 0,
+			completedVideos: 0,
+			totalWords: 0,
+			totalReadingTime: 0,
+			totalVideoDuration: 0,
+		};
+
+		res.json({
+			totalUsers: userCount,
+			totalVideosProcessed: stats.completedVideos,
+			totalMinutesProcessed: Math.round(stats.totalVideoDuration / 60),
+			totalWordsGenerated: stats.totalWords,
+			totalReadingHours: Math.round(stats.totalReadingTime / 60),
+			popularAiModels: aiModelStats.map((model) => ({
+				model: model._id,
+				count: model.count
+			})),
+			successRate: stats.totalVideosProcessed > 0
+				? Math.round((stats.completedVideos / stats.totalVideosProcessed) * 100)
+				: 0,
+		});
+	} catch (error) {
+		console.error('Get public stats error:', error);
+		res.status(500).json({ error: 'Failed to fetch public statistics' });
+	}
+};
+
 const getPostStats = async (req, res) => {
 	try {
 		const userId = req.user.id;
@@ -646,4 +710,5 @@ module.exports = {
 	exportPost,
 	improvePost,
 	getPostStats,
+	getPublicStats,
 };

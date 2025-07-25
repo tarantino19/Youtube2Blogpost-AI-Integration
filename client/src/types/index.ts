@@ -57,3 +57,13 @@ export interface ProcessVideoResponse {
 	postId: string;
 	message: string;
 }
+
+export interface PublicStats {
+	totalUsers: number;
+	totalVideosProcessed: number;
+	totalMinutesProcessed: number;
+	totalWordsGenerated: number;
+	totalReadingHours: number;
+	popularAiModels: { model: string; count: number }[];
+	successRate: number;
+}
