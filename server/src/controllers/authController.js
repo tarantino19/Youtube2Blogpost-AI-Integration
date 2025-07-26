@@ -420,7 +420,7 @@ const googleCallback = async (req, res) => {
 		const refreshToken = generateRefreshToken(user._id);
 
 		// Update last login
-		user.updatedAt = Date.now();
+		user.lastLogin = Date.now();
 		await user.save();
 
 		// Set httpOnly cookies
