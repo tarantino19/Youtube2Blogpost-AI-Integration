@@ -72,6 +72,10 @@ const userSchema = new mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
+	lastLogin: {
+		type: Date,
+		default: null,
+	},
 });
 
 // Update the updatedAt timestamp before saving
