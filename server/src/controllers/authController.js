@@ -371,9 +371,14 @@ const deleteAccount = async (req, res) => {
 
 const logout = async (req, res) => {
 	try {
-		// Clear cookies
-		res.clearCookie('accessToken');
-		res.clearCookie('refreshToken');
+		const cookieOpts = {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'strict',
+		};
+
+		res.clearCookie('accessToken', cookieOpts);
+		res.clearCookie('refreshToken', cookieOpts);
 
 		// Log logout activity if we have user info in the request
 		if (req.user) {
